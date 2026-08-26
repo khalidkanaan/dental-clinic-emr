@@ -145,6 +145,28 @@ class _ConnectionCard extends ConsumerWidget {
       dbValue = l10n.statusNotReady;
     }
 
+    String tokenValue;
+    bool? tokenGood;
+    if (checking || status == null) {
+      tokenValue = l10n.statusChecking;
+      tokenGood = null;
+    } else {
+      switch (status.tokenStatus) {
+        case TokenStatus.valid:
+          tokenValue = l10n.statusValid;
+          tokenGood = true;
+          break;
+        case TokenStatus.invalid:
+          tokenValue = l10n.statusInvalid;
+          tokenGood = false;
+          break;
+        case TokenStatus.unknown:
+          tokenValue = l10n.statusUnknown;
+          tokenGood = null;
+          break;
+      }
+    }
+
     final lastConnection = (status != null && status.allHealthy)
         ? DateFormat.yMMMd(locale).add_jm().format(status.checkedAt!)
         : l10n.statusNever;
@@ -164,6 +186,13 @@ class _ConnectionCard extends ConsumerWidget {
             label: l10n.databaseReadiness,
             value: dbValue,
             good: !checking && (status?.databaseReady ?? false),
+            checking: checking,
+          ),
+          const Divider(height: 20),
+          _StatusRow(
+            label: l10n.apiTokenStatus,
+            value: tokenValue,
+            good: tokenGood,
             checking: checking,
           ),
           const Divider(height: 20),

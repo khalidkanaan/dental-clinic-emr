@@ -268,72 +268,90 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
 
   Widget _buildContent(BuildContext context, PatientDetailsState state) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 900),
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PatientHeader(
-                      patient: state.patient,
-                      onCall: () => _callPhone(state.patient.phoneNumber),
-                    ),
-                    const SizedBox(height: 20),
-                    if (state.patient.isArchived)
-                      _RestoreBanner(onRestore: _restore),
-                    Text(
-                      l10n.visitHistory,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Frozen patient information. This stays pinned at the top so it is
+            // always visible while the visit history below scrolls
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: _PatientHeader(
+                    patient: state.patient,
+                    onCall: () => _callPhone(state.patient.phoneNumber),
+                  ),
                 ),
+                Divider(height: 1, thickness: 1, color: theme.colorScheme.outlineVariant),
+              ],
+            ),
+            // Scrollable visit history.
+            Expanded(
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (state.patient.isArchived)
+                            _RestoreBanner(onRestore: _restore),
+                          Text(
+                            l10n.visitHistory,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (state.visits.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: EmptyState(
+                        icon: Icons.event_note_outlined,
+                        title: l10n.emptyNoVisitsTitle,
+                        message: l10n.emptyNoVisitsBody,
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                      sliver: SliverList.builder(
+                        itemCount:
+                            state.visits.length + (state.hasMoreVisits ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= state.visits.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          final visit = state.visits[index];
+                          return VisitCard(
+                            visit: visit,
+                            canEdit: !state.patient.isArchived,
+                            onEdit: () => context.push(
+                              '/patient/${widget.patientId}/visit/edit',
+                              extra: visit,
+                            ),
+                            onDelete: () => _deleteVisit(visit),
+                          );
+                        },
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (state.visits.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: EmptyState(
-                  icon: Icons.event_note_outlined,
-                  title: l10n.emptyNoVisitsTitle,
-                  message: l10n.emptyNoVisitsBody,
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                sliver: SliverList.builder(
-                  itemCount: state.visits.length + (state.hasMoreVisits ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index >= state.visits.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    final visit = state.visits[index];
-                    return VisitCard(
-                      visit: visit,
-                      canEdit: !state.patient.isArchived,
-                      onEdit: () => context.push(
-                        '/patient/${widget.patientId}/visit/edit',
-                        extra: visit,
-                      ),
-                      onDelete: () => _deleteVisit(visit),
-                    );
-                  },
-                ),
-              ),
           ],
         ),
       ),

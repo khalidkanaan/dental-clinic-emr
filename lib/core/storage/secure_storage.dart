@@ -8,13 +8,14 @@ class SecureStore {
   SecureStore([FlutterSecureStorage? storage])
       : _storage = storage ??
             const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
+              aOptions: AndroidOptions(),
               iOptions: IOSOptions(
                 accessibility: KeychainAccessibility.first_unlock,
               ),
             );
 
   static const _tokenKey = 'app_api_token';
+
   final FlutterSecureStorage _storage;
 
   Future<String?> readToken() => _storage.read(key: _tokenKey);

@@ -11,7 +11,8 @@ class HealthController extends AsyncNotifier<HealthStatus> {
   }
 
   Future<void> retest() async {
-    state = const AsyncLoading<HealthStatus>().copyWithPrevious(state);
+    state = const AsyncLoading<HealthStatus>();
+
     state = await AsyncValue.guard(
       () => ref.read(healthRepositoryProvider).check(),
     );
@@ -19,4 +20,6 @@ class HealthController extends AsyncNotifier<HealthStatus> {
 }
 
 final healthControllerProvider =
-    AsyncNotifierProvider<HealthController, HealthStatus>(HealthController.new);
+    AsyncNotifierProvider<HealthController, HealthStatus>(
+  HealthController.new,
+);

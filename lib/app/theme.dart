@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:material_ui/material_ui.dart';
 
 /// Centralized application theming.

@@ -1,0 +1,39 @@
+name: dental_clinic
+description: A simple, modern patient management app for a single dental clinic.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Material 3 UI. Material widgets have been decoupled from the Flutter core
+  # into this official standalone package; it is a drop-in replacement for
+  # package:flutter/material.dart.
+  material_ui: ^1.1.0
+
+  dio: ^5.11.0
+  flutter_riverpod: ^3.4.2
+  go_router: ^18.0.0
+  flutter_secure_storage: ^11.0.0
+  uuid: ^4.6.0
+  intl: ^0.20.3
+  shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
+  package_info_plus: ^10.2.1
+  window_manager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true

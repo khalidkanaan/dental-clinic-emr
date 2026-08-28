@@ -106,6 +106,7 @@ class PatientSearchController extends Notifier<PatientSearchState> {
       final page = await ref.read(patientRepositoryProvider).search(
             query: state.query.trim(),
             includeArchived: state.includeArchived,
+            contains: true,
             limit: AppConfig.pageSize,
           );
       if (seq != _seq) return; // superseded by a newer search
@@ -129,6 +130,7 @@ class PatientSearchController extends Notifier<PatientSearchState> {
       final page = await ref.read(patientRepositoryProvider).search(
             query: state.query.trim(),
             includeArchived: state.includeArchived,
+            contains: true,
             limit: AppConfig.pageSize,
             cursor: state.cursor,
           );

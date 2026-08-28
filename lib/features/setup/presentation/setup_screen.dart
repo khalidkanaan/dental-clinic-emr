@@ -48,7 +48,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(Icons.medical_services_rounded,
+                    Icon(Icons.lock_person_rounded,
                         size: 52, color: theme.colorScheme.primary),
                     const SizedBox(height: 20),
                     Text(l10n.setupTitle,

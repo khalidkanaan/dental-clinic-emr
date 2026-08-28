@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:dental_clinic/core/widgets/empty_state.dart';
 import 'package:dental_clinic/core/widgets/error_view.dart';
 import 'package:dental_clinic/core/widgets/max_width.dart';
+import 'package:dental_clinic/core/widgets/clinic_logo.dart';
 import 'package:dental_clinic/features/patients/application/patient_search_controller.dart';
 import 'package:dental_clinic/features/patients/presentation/widgets/patient_list_tile.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
@@ -51,7 +52,7 @@ class _PatientDirectoryScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: ClinicLogo(semanticLabel: l10n.appTitle),
         actions: [
           IconButton(
             tooltip: l10n.settings,
@@ -98,6 +99,7 @@ class _PatientDirectoryScreenState
                   label: Text(l10n.showArchived),
                   selected: state.includeArchived,
                   onSelected: controller.setIncludeArchived,
+                  showCheckmark: false,
                   avatar: Icon(
                     state.includeArchived
                         ? Icons.inventory_2_rounded

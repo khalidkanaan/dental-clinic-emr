@@ -11,11 +11,16 @@ class PatientWithVisits {
     required this.patient,
     required this.visits,
     this.nextVisitsCursor,
+    this.totalOwed = 0,
   });
 
   final Patient patient;
   final List<Visit> visits;
   final String? nextVisitsCursor;
+
+  /// Server-computed sum of `amountOwed` across ALL of the patient's visits
+  /// (integer hundredths of JOD), independent of how many pages were returned.
+  final int totalOwed;
 }
 
 /// Result of creating a patient (optionally with an initial visit).
@@ -54,7 +59,8 @@ class PatientRepository {
     return Paginated(items: items, nextCursor: json['nextCursor'] as String?);
   }
 
-  /// Load a patient plus the first page of visits.
+  /// Load a patient plus the first page of visits and the total owed across all
+  /// of their visits.
   Future<PatientWithVisits> getWithVisits(String id, {int visitLimit = 30}) async {
     final json = await _api.get('/patients/$id', query: {
       'includeVisits': 'true',
@@ -69,6 +75,7 @@ class PatientRepository {
       patient: patient,
       visits: visits,
       nextVisitsCursor: json['nextVisitsCursor'] as String?,
+      totalOwed: (json['totalOwed'] as num?)?.toInt() ?? 0,
     );
   }
 

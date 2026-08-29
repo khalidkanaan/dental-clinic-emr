@@ -61,6 +61,15 @@
   "deleteVisitBody": "This permanently deletes the visit and cannot be undone.",
   "paidLabel": "Paid",
   "owedLabel": "Owed",
+  "owedTotal": "Owed {amount}",
+  "@owedTotal": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "owedOnlyTooltip": "Show only visits with a balance",
+  "noOwedVisitsTitle": "No outstanding balance",
+  "noOwedVisitsBody": "Every visit for this patient is fully paid.",
 
   "moreActions": "More",
   "archivePatient": "Archive Patient",

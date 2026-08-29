@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:dental_clinic/core/error/api_exception.dart';
 import 'package:dental_clinic/core/error/error_messages.dart';
+import 'package:dental_clinic/core/formatting/currency_formatter.dart';
 import 'package:dental_clinic/core/widgets/app_dialogs.dart';
 import 'package:dental_clinic/core/widgets/empty_state.dart';
 import 'package:dental_clinic/core/widgets/error_view.dart';
@@ -34,6 +35,7 @@ class PatientDetailsScreen extends ConsumerStatefulWidget {
 class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
   final _scrollController = ScrollController();
   bool _autoRestoreHandled = false;
+  bool _showOwedOnly = false;
 
   @override
   void initState() {
@@ -51,6 +53,9 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
       ref.read(patientDetailsControllerProvider(widget.patientId).notifier);
 
   void _onScroll() {
+    // The "owed only" view loads its full set up front, so infinite scroll is
+    // only needed for the recent-visits list.
+    if (_showOwedOnly) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 300) {
@@ -154,6 +159,23 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     }
   }
 
+  void _toggleOwedFilter(bool value) {
+    setState(() => _showOwedOnly = value);
+    // The actual loading is kicked off from build() so it also covers the case
+    // where the cache was invalidated by a mutation while the filter is open.
+  }
+
+  /// Ensures the full owed-visit set is loaded whenever the filter is showing it
+  /// and it isn't already loaded / loading. Safe to call from build(): it only
+  /// schedules a microtask and the controller call is idempotent.
+  void _maybeLoadOwedVisits(PatientDetailsState state) {
+    if (_showOwedOnly &&
+        state.owedVisits == null &&
+        !state.loadingOwedVisits) {
+      Future.microtask(() => _runMutation(_controller.ensureOwedVisitsLoaded));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -191,6 +213,7 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
           ),
           data: (state) {
             _maybeAutoRestore(state.patient);
+            _maybeLoadOwedVisits(state);
             return _buildContent(context, state);
           },
         ),
@@ -276,8 +299,8 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Frozen patient information. This stays pinned at the top so it is
-            // always visible while the visit history below scrolls
+            // Frozen patient information. Stays pinned at the top while the
+            // visit history below scrolls.
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -288,67 +311,38 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
                     onCall: () => _callPhone(state.patient.phoneNumber),
                   ),
                 ),
-                Divider(height: 1, thickness: 1, color: theme.colorScheme.outlineVariant),
+                Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.outlineVariant),
               ],
             ),
-            // Scrollable visit history.
+            // Scrollable visit history with a pinned "Visit History" header.
             Expanded(
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (state.patient.isArchived)
-                            _RestoreBanner(onRestore: _restore),
-                          Text(
-                            l10n.visitHistory,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
+                  if (state.patient.isArchived)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: _RestoreBanner(onRestore: _restore),
+                      ),
+                    ),
+                  // Pinned header: title + total-owed toggle chip.
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _VisitHistoryHeaderDelegate(
+                      height: 60,
+                      background: theme.scaffoldBackgroundColor,
+                      child: _VisitHistoryHeader(
+                        totalOwed: state.totalOwed,
+                        showOwedOnly: _showOwedOnly,
+                        onToggle: _toggleOwedFilter,
                       ),
                     ),
                   ),
-                  if (state.visits.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: EmptyState(
-                        icon: Icons.event_note_outlined,
-                        title: l10n.emptyNoVisitsTitle,
-                        message: l10n.emptyNoVisitsBody,
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                      sliver: SliverList.builder(
-                        itemCount:
-                            state.visits.length + (state.hasMoreVisits ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= state.visits.length) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          final visit = state.visits[index];
-                          return VisitCard(
-                            visit: visit,
-                            canEdit: !state.patient.isArchived,
-                            onEdit: () => context.push(
-                              '/patient/${widget.patientId}/visit/edit',
-                              extra: visit,
-                            ),
-                            onDelete: () => _deleteVisit(visit),
-                          );
-                        },
-                      ),
-                    ),
+                  ..._buildVisitSlivers(context, state, l10n),
                 ],
               ),
             ),
@@ -357,6 +351,199 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
       ),
     );
   }
+
+  List<Widget> _buildVisitSlivers(
+    BuildContext context,
+    PatientDetailsState state,
+    AppLocalizations l10n,
+  ) {
+    if (_showOwedOnly) {
+      final owed = state.owedVisits;
+      if (owed == null) {
+        // Still fetching the full owed set.
+        return const [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        ];
+      }
+      if (owed.isEmpty) {
+        return [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyState(
+              icon: Icons.verified_outlined,
+              title: l10n.noOwedVisitsTitle,
+              message: l10n.noOwedVisitsBody,
+            ),
+          ),
+        ];
+      }
+      return [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+          sliver: SliverList.builder(
+            itemCount: owed.length,
+            itemBuilder: (context, index) =>
+                _visitCard(context, state, owed[index]),
+          ),
+        ),
+      ];
+    }
+
+    // Default: recent visits, paginated.
+    if (state.visits.isEmpty) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: EmptyState(
+            icon: Icons.event_note_outlined,
+            title: l10n.emptyNoVisitsTitle,
+            message: l10n.emptyNoVisitsBody,
+          ),
+        ),
+      ];
+    }
+
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+        sliver: SliverList.builder(
+          itemCount: state.visits.length + (state.hasMoreVisits ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= state.visits.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return _visitCard(context, state, state.visits[index]);
+          },
+        ),
+      ),
+    ];
+  }
+
+  Widget _visitCard(
+    BuildContext context,
+    PatientDetailsState state,
+    Visit visit,
+  ) {
+    return VisitCard(
+      visit: visit,
+      canEdit: !state.patient.isArchived,
+      onEdit: () => context.push(
+        '/patient/${widget.patientId}/visit/edit',
+        extra: visit,
+      ),
+      onDelete: () => _deleteVisit(visit),
+    );
+  }
+}
+
+class _VisitHistoryHeader extends StatelessWidget {
+  const _VisitHistoryHeader({
+    required this.totalOwed,
+    required this.showOwedOnly,
+    required this.onToggle,
+  });
+
+  final int totalOwed;
+  final bool showOwedOnly;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    // Only offer the toggle when there is a balance to look at (or it is
+    // already active).
+    final showChip = totalOwed > 0 || showOwedOnly;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        children: [
+          Text(
+            l10n.visitHistory,
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const Spacer(),
+          if (showChip)
+            FilterChip(
+              selected: showOwedOnly,
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              tooltip: l10n.owedOnlyTooltip,
+              avatar: Icon(
+                showOwedOnly
+                    ? Icons.account_balance_wallet_rounded
+                    : Icons.account_balance_wallet_outlined,
+                size: 18,
+                color: showOwedOnly
+                    ? theme.colorScheme.onSecondaryContainer
+                    : theme.colorScheme.error,
+              ),
+              label: Text(
+                l10n.owedTotal(JodMoney.format(totalOwed, locale: locale)),
+              ),
+              onSelected: onToggle,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VisitHistoryHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _VisitHistoryHeaderDelegate({
+    required this.height,
+    required this.child,
+    required this.background,
+  });
+
+  final double height;
+  final Widget child;
+  final Color background;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final theme = Theme.of(context);
+    return Material(
+      color: background,
+      child: SizedBox(
+        height: height,
+        child: Column(
+          children: [
+            Expanded(child: child),
+            // A separator appears only once the header actually overlaps
+            // scrolled cards, so it reads as "pinned".
+            if (overlapsContent)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: theme.colorScheme.outlineVariant,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _VisitHistoryHeaderDelegate oldDelegate) => true;
 }
 
 class _PatientHeader extends StatelessWidget {

@@ -61,6 +61,15 @@
   "deleteVisitBody": "سيؤدي هذا إلى حذف الزيارة نهائيًا ولا يمكن التراجع عنه.",
   "paidLabel": "مدفوع",
   "owedLabel": "مستحق",
+  "owedTotal": "مستحق {amount}",
+  "@owedTotal": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "owedOnlyTooltip": "عرض الزيارات التي عليها رصيد فقط",
+  "noOwedVisitsTitle": "لا يوجد رصيد مستحق",
+  "noOwedVisitsBody": "جميع زيارات هذا المريض مدفوعة بالكامل.",
 
   "moreActions": "المزيد",
   "archivePatient": "أرشفة المريض",

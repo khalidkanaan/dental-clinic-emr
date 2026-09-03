@@ -113,6 +113,7 @@
   "application": "Application",
   "version": "Version",
   "buildNumber": "Build",
+  "developer": "Developer",
   "resetToken": "Reset API token",
   "resetTokenBody": "You will need to enter your API token again to use the app.",
 

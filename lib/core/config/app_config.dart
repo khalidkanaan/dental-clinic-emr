@@ -13,6 +13,9 @@ class AppConfig {
     defaultValue: 'https://khalo-cosmos-api.khalid-kanaan-ca.workers.dev/v1',
   );
 
+  /// Name of the developer, shown in Settings › Application.
+  static const String developer = "Khalid Kana'an";
+
   /// Default page size for patient search and visit history.
   static const int pageSize = 30;
 

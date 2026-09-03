@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:dental_clinic/core/config/app_config.dart';
 import 'package:dental_clinic/core/widgets/app_dialogs.dart';
 import 'package:dental_clinic/core/widgets/max_width.dart';
 import 'package:dental_clinic/features/health/application/health_controller.dart';
@@ -281,6 +282,8 @@ class _AppInfoCard extends ConsumerWidget {
             _StatusRow(label: l10n.version, value: data.version),
             const Divider(height: 20),
             _StatusRow(label: l10n.buildNumber, value: data.buildNumber),
+            const Divider(height: 20),
+            _StatusRow(label: l10n.developer, value: AppConfig.developer),
           ],
         ),
       ),

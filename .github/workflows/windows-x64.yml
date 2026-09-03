@@ -1,0 +1,30 @@
+name: Build Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows (x64 release)
+        run: flutter build windows --release
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dental_clinic-windows-x64
+          path: build/windows/x64/runner/Release/

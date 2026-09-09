@@ -31,7 +31,7 @@
   "emptyNoVisitsBody": "أضف أول زيارة لهذا المريض.",
 
   "createPatientTitle": "مريض جديد",
-  "editPatientTitle": "تعديل المريض",
+  "editPatientTitle": "تعديل بيانات المريض",
   "fieldName": "الاسم",
   "fieldPhone": "رقم الهاتف",
   "addFirstVisit": "إضافة أول زيارة",
@@ -39,52 +39,61 @@
   "validationPhoneRequired": "الرجاء إدخال رقم الهاتف",
   "patientSaved": "تم حفظ المريض",
 
-  "duplicateActiveTitle": "المريض موجود بالفعل",
-  "duplicateActiveBody": "يوجد مريض بنفس الاسم ورقم الهاتف بالفعل.",
-  "duplicateArchivedTitle": "موجود في السجلات المؤرشفة",
-  "duplicateArchivedBody": "هذا المريض موجود بالفعل في السجلات المؤرشفة.",
+  "duplicateActiveTitle": "المريض موجود مسبقا",
+  "duplicateActiveBody": "يوجد مريض بنفس الاسم ورقم الهاتف.",
+  "duplicateArchivedTitle": "موجود ضمن المؤرشفين",
+  "duplicateArchivedBody": "هذا المريض موجود ضمن المرضى المؤرشفين.",
 
   "addVisit": "إضافة زيارة",
   "visitHistory": "سجل الزيارات",
   "addVisitTitle": "إضافة زيارة",
   "editVisitTitle": "تعديل الزيارة",
   "fieldVisitDate": "تاريخ الزيارة",
-  "fieldTreatment": "العلاج / العمل المُنجز",
+  "fieldTreatment": "العلاج / العمل المنجز",
   "fieldAmountPaid": "المبلغ المدفوع",
-  "fieldAmountOwed": "المبلغ المستحق",
-  "validationTreatmentRequired": "الرجاء وصف العلاج",
-  "validationAmountInvalid": "أدخل مبلغًا صحيحًا (خانتان عشريتان كحد أقصى)",
+  "fieldAmountOwed": "المبلغ المتبقي",
+  "validationTreatmentRequired": "أدخل وصف العلاج",
+  "validationAmountInvalid": "أدخل مبلغا صحيحا (خانتان عشريتان كحد أقصى)",
   "visitAdded": "تمت إضافة الزيارة",
   "visitUpdated": "تم تحديث الزيارة",
   "visitDeleted": "تم حذف الزيارة",
   "deleteVisitTitle": "حذف هذه الزيارة؟",
-  "deleteVisitBody": "سيؤدي هذا إلى حذف الزيارة نهائيًا ولا يمكن التراجع عنه.",
+  "deleteVisitBody": "ستُحذف هذه الزيارة نهائيا دون إمكانية التراجع.",
   "paidLabel": "مدفوع",
-  "owedLabel": "مستحق",
-  "owedTotal": "مستحق {amount}",
+  "owedLabel": "متبقي",
+  "owedTotal": "المتبقي {amount}",
   "@owedTotal": {
     "placeholders": {
-      "amount": { "type": "String" }
+      "amount": {
+        "type": "String"
+      }
     }
   },
-  "owedOnlyTooltip": "عرض الزيارات التي عليها رصيد فقط",
-  "noOwedVisitsTitle": "لا يوجد رصيد مستحق",
+  "owedOnlyTooltip": "عرض الزيارات ذات المبلغ المتبقي فقط",
+  "noOwedVisitsTitle": "لا توجد مبالغ متبقية",
   "noOwedVisitsBody": "جميع زيارات هذا المريض مدفوعة بالكامل.",
+
+  "markPaid": "تحديد كمدفوع",
+  "markUnpaid": "تحديد كغير مدفوع",
+  "settledLabel": "تم الدفع",
+  "actionUndo": "تراجع",
+  "visitSettled": "تم تحديد المبلغ كمدفوع",
+  "visitUnsettled": "تم التراجع عن الدفع",
 
   "moreActions": "المزيد",
   "archivePatient": "أرشفة المريض",
-  "archivePatientBody": "سيؤدي هذا إلى إخفاء المريض من القائمة مع الاحتفاظ بسجل زياراته. يمكنك استعادته لاحقًا.",
+  "archivePatientBody": "سيُخفى المريض من القائمة مع الاحتفاظ بسجل زياراته، ويمكن استعادته لاحقا.",
   "archivePatientConfirm": "أرشفة",
   "patientArchivedNotice": "تمت أرشفة المريض",
   "restorePatientTitle": "استعادة المريض",
-  "restorePatientBody": "سيؤدي هذا إلى إعادة المريض إلى القائمة النشطة.",
+  "restorePatientBody": "سيعود المريض إلى قائمة المرضى النشطين.",
   "restorePatientConfirm": "استعادة",
   "patientRestoredNotice": "تمت استعادة المريض",
   "permanentlyDelete": "حذف نهائي",
-  "permanentlyDeleteTitle": "حذف المريض نهائيًا؟",
-  "permanentlyDeleteBody": "لا يمكن التراجع عن هذا. يجب أن يكون المريض مؤرشفًا وبدون زيارات.",
+  "permanentlyDeleteTitle": "حذف المريض نهائيا؟",
+  "permanentlyDeleteBody": "لا يمكن التراجع عن هذا الإجراء، ويجب أن يكون المريض مؤرشفا وبلا زيارات.",
   "permanentlyDeleteConfirm": "حذف نهائي",
-  "patientDeletedNotice": "تم حذف المريض نهائيًا",
+  "patientDeletedNotice": "تم حذف المريض نهائيا",
 
   "callPatient": "اتصال",
 
@@ -104,7 +113,7 @@
   "statusOffline": "غير متصل",
   "statusReady": "جاهزة",
   "statusNotReady": "غير جاهزة",
-  "statusChecking": "جارٍ الفحص…",
+  "statusChecking": "جاري الفحص…",
   "statusNever": "لا يوجد",
   "apiTokenStatus": "رمز الوصول",
   "statusValid": "صالح",
@@ -125,23 +134,25 @@
   "versionConflictTitle": "تم تغيير هذا السجل من مكان آخر.",
   "versionConflictBody": "حمّل أحدث نسخة ثم أعد تطبيق تغييرك.",
   "technicalDetails": "تفاصيل تقنية",
-  "requestId": "معرّف الطلب",
+  "requestId": "معرف الطلب",
 
   "retryAfterSeconds": "الرجاء الانتظار {seconds} ثانية ثم إعادة المحاولة.",
   "@retryAfterSeconds": {
     "placeholders": {
-      "seconds": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      }
     }
   },
 
   "errUnauthorized": "الوصول غير مصرّح به. تحقق من رمز الوصول في الإعدادات.",
   "errPatientNotFound": "لم يتم العثور على المريض.",
   "errVisitNotFound": "لم يتم العثور على الزيارة.",
-  "errPatientExists": "يوجد مريض بنفس الاسم ورقم الهاتف بالفعل.",
+  "errPatientExists": "يوجد مريض بنفس الاسم ورقم الهاتف.",
   "errPatientArchived": "هذا المريض مؤرشف. استعِده قبل إجراء التغييرات.",
   "errArchiveFirst": "قم بأرشفة المريض قبل الحذف النهائي.",
   "errPatientHasVisits": "احذف جميع زيارات هذا المريض قبل حذفه نهائيًا.",
-  "errIdempotencyConflict": "تم إرسال هذا الإجراء بالفعل ببيانات مختلفة.",
+  "errIdempotencyConflict": "تم إرسال هذا الإجراء مسبقا ببيانات مختلفة.",
   "errRateLimited": "طلبات كثيرة جدًا. الرجاء الانتظار لحظة ثم إعادة المحاولة.",
   "errServiceUnavailable": "الخدمة غير متوفرة مؤقتًا. الرجاء إعادة المحاولة قريبًا.",
   "errNotReady": "الخدمة ليست جاهزة بعد. الرجاء إعادة المحاولة قريبًا.",

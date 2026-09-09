@@ -152,6 +152,23 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     });
   }
 
+  Future<void> _setSettled(Visit visit, bool settled) async {
+    final l10n = AppLocalizations.of(context);
+    await _runMutation(() async {
+      await _controller.setVisitSettled(
+        visit.id,
+        version: visit.version,
+        settled: settled,
+      );
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          settled ? l10n.visitSettled : l10n.visitUnsettled,
+        );
+      }
+    });
+  }
+
   void _maybeAutoRestore(Patient patient) {
     if (widget.autoRestore && !_autoRestoreHandled && patient.isArchived) {
       _autoRestoreHandled = true;
@@ -440,6 +457,8 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
         extra: visit,
       ),
       onDelete: () => _deleteVisit(visit),
+      onSettle: () => _setSettled(visit, true),
+      onUnsettle: () => _setSettled(visit, false),
     );
   }
 }

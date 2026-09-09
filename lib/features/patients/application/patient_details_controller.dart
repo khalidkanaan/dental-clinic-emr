@@ -244,6 +244,43 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
     );
   }
 
+    /// Marks a visit settled (balance collected) or reverses it, adjusting the
+  /// header [PatientDetailsState.totalOwed] by the visit's balance so the total
+  /// stays accurate without a full reload. The settled visit stays in both the
+  /// recent list and the owed-only list (shown struck through by the card).
+  Future<Visit> setVisitSettled(
+    String visitId, {
+    required String version,
+    required bool settled,
+  }) async {
+    final previous = _findLoadedVisit(visitId);
+
+    final updated = await ref.read(visitRepositoryProvider).setSettled(
+          patientId,
+          visitId,
+          version: version,
+          settled: settled,
+        );
+
+    var totalOwed = _current.totalOwed;
+    // Shift the total only when the settled state actually flipped, so repeated
+    // taps or replays don't double-count.
+    if (previous == null || previous.settled != updated.settled) {
+      totalOwed += updated.settled ? -updated.amountOwed : updated.amountOwed;
+    }
+
+    List<Visit> replace(List<Visit> list) =>
+        list.map((visit) => visit.id == visitId ? updated : visit).toList();
+
+    final owed = _current.owedVisits;
+    state = AsyncData(_current.copyWith(
+      visits: replace(_current.visits),
+      totalOwed: _nonNegative(totalOwed),
+      owedVisits: owed == null ? null : replace(owed),
+    ));
+    return updated;
+  }
+
   Future<Patient> editPatient({
     String? name,
     String? phoneNumber,

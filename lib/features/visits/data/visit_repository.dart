@@ -69,6 +69,24 @@ class VisitRepository {
       headers: {'If-Match': version},
     );
   }
+  
+  /// Marks a visit's balance as collected (or reverses it). The `amountOwed`
+  /// value is preserved; settling only removes it from the outstanding total.
+  /// Sends `If-Match` for the same optimistic-concurrency guarantee as
+  /// [update] / [delete].
+  Future<Visit> setSettled(
+    String patientId,
+    String visitId, {
+    required String version,
+    required bool settled,
+  }) async {
+    final action = settled ? 'settle' : 'unsettle';
+    final json = await _api.post(
+      '/patients/$patientId/visits/$visitId/$action',
+      headers: {'If-Match': version},
+    );
+    return Visit.fromJson((json['visit'] as Map).cast<String, dynamic>());
+  }
 
   String newIdempotencyKey() => _uuid.v4();
 }

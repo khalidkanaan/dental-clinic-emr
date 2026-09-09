@@ -11,12 +11,16 @@ class VisitCard extends StatelessWidget {
     required this.visit,
     required this.onEdit,
     required this.onDelete,
+    required this.onSettle,
+    required this.onUnsettle,
     this.canEdit = true,
   });
 
   final Visit visit;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onSettle;
+  final VoidCallback onUnsettle;
 
   /// When false (archived patient) the Edit action is hidden; Delete remains,
   /// so visits can still be removed to make the patient eligible for purge.
@@ -35,17 +39,25 @@ class VisitCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header: date on the left; the balance action + overflow menu on
+            // the right. The settle/undo control lives here (not below the
+            // pills) so it reuses the row height the menu already occupies and
+            // never makes the card taller.
             Row(
               children: [
                 Icon(Icons.event_rounded,
                     size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(
-                  VisitDate.formatForDisplay(visit.visitDate, locale: locale),
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                Expanded(
+                  child: Text(
+                    VisitDate.formatForDisplay(visit.visitDate, locale: locale),
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
                 ),
-                const Spacer(),
+                if (visit.amountOwed > 0)
+                  _buildBalanceControl(context, theme, l10n),
                 _VisitMenu(
                   onEdit: onEdit,
                   onDelete: onDelete,
@@ -68,17 +80,65 @@ class VisitCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 _AmountPill(
+                  // A settled balance shows the owed amount struck through in
+                  // the normal color — that is the "paid" status indicator, so
+                  // the header control can be a plain Undo action.
                   label: l10n.owedLabel,
                   value: JodMoney.format(visit.amountOwed, locale: locale),
-                  color: visit.amountOwed > 0
+                  color: (visit.amountOwed > 0 && !visit.settled)
                       ? theme.colorScheme.error
                       : theme.colorScheme.onSurfaceVariant,
+                  strikethrough: visit.settled && visit.amountOwed > 0,
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Header control shown when the visit carries a balance. Compact so it fits
+  /// beside the overflow menu without adding height.
+  Widget _buildBalanceControl(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    const density = VisualDensity.compact;
+    const padding = EdgeInsets.symmetric(horizontal: 10);
+    const minimumSize = Size(0, 36);
+    const tapTarget = MaterialTapTargetSize.shrinkWrap;
+
+    if (!visit.settled) {
+      // Owed and unsettled: one tap marks the balance as paid.
+      return TextButton.icon(
+        onPressed: onSettle,
+        style: TextButton.styleFrom(
+          visualDensity: density,
+          padding: padding,
+          minimumSize: minimumSize,
+          tapTargetSize: tapTarget,
+        ),
+        icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+        label: Text(l10n.markPaid),
+      );
+    }
+
+    // Settled: an outlined Undo button so it clearly reads as a tappable action
+    // (the struck-through Owed amount already conveys the paid status).
+    return OutlinedButton.icon(
+      onPressed: onUnsettle,
+      style: OutlinedButton.styleFrom(
+        visualDensity: density,
+        padding: padding,
+        minimumSize: minimumSize,
+        tapTargetSize: tapTarget,
+        foregroundColor: theme.colorScheme.primary,
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      icon: const Icon(Icons.undo_rounded, size: 18),
+      label: Text(l10n.actionUndo),
     );
   }
 }
@@ -132,11 +192,13 @@ class _AmountPill extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.strikethrough = false,
   });
 
   final String label;
   final String value;
   final Color color;
+  final bool strikethrough;
 
   @override
   Widget build(BuildContext context) {
@@ -157,8 +219,14 @@ class _AmountPill extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               value,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700, color: color),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+                decoration:
+                    strikethrough ? TextDecoration.lineThrough : null,
+                decorationColor: color,
+                decorationThickness: 2,
+              ),
             ),
           ],
         ),

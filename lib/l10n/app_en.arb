@@ -71,6 +71,13 @@
   "noOwedVisitsTitle": "No outstanding balance",
   "noOwedVisitsBody": "Every visit for this patient is fully paid.",
 
+  "markPaid": "Mark as paid",
+  "settledLabel": "Settled",
+  "actionUndo": "Undo",
+  "visitSettled": "Balance marked as paid",
+  "visitUnsettled": "Balance marked as unpaid",
+  "markUnpaid": "Mark as unpaid",
+
   "moreActions": "More",
   "archivePatient": "Archive Patient",
   "archivePatientBody": "This hides the patient from the directory but keeps their visit history. You can restore them later.",

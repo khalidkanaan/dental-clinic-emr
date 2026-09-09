@@ -11,6 +11,8 @@ class Visit {
     required this.amountPaid,
     required this.amountOwed,
     required this.version,
+    this.settledAt,
+    this.settled = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -29,10 +31,17 @@ class Visit {
   /// Optimistic-concurrency token; sent as `If-Match` on edit/delete.
   final String version;
 
+  /// When non-null, this visit's balance has been marked as collected. The
+  /// `amountOwed` value is kept for the record but no longer counts toward the
+  /// patient's outstanding total.
+  final String? settledAt;
+  final bool settled;
+
   final String? createdAt;
   final String? updatedAt;
 
   factory Visit.fromJson(JsonMap json) {
+    final settledAt = json['settledAt'] as String?;
     return Visit(
       id: json['id'] as String,
       patientId: (json['patientId'] as String?) ?? '',
@@ -41,6 +50,8 @@ class Visit {
       amountPaid: (json['amountPaid'] as num?)?.toInt() ?? 0,
       amountOwed: (json['amountOwed'] as num?)?.toInt() ?? 0,
       version: (json['version'] as String?) ?? '',
+      settledAt: settledAt,
+      settled: (json['settled'] as bool?) ?? (settledAt != null),
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
     );

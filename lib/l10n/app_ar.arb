@@ -61,15 +61,46 @@
   "deleteVisitBody": "سيؤدي هذا إلى حذف الزيارة نهائيًا ولا يمكن التراجع عنه.",
   "paidLabel": "مدفوع",
   "owedLabel": "مستحق",
-  "owedTotal": "مستحق {amount}",
-  "@owedTotal": {
+  "creditLabel": "الرصيد",
+  "creditTooltip": "عرض سجل الرصيد وتعديله",
+  "creditSheetTitle": "رصيد المريض",
+  "creditCurrentBalance": "الرصيد الحالي",
+  "creditLastUpdated": "آخر تحديث {date}",
+  "@creditLastUpdated": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "creditHistoryTitle": "السجل",
+  "creditHistoryEmpty": "لا توجد تغييرات على الرصيد",
+  "creditIncrease": "إضافة",
+  "creditDeduction": "خصم",
+  "creditStartingBalance": "الرصيد الافتتاحي",
+  "creditBalanceAfter": "الرصيد {amount}",
+  "@creditBalanceAfter": {
     "placeholders": {
       "amount": { "type": "String" }
     }
   },
-  "owedOnlyTooltip": "عرض الزيارات التي عليها رصيد فقط",
-  "noOwedVisitsTitle": "لا يوجد رصيد مستحق",
-  "noOwedVisitsBody": "جميع زيارات هذا المريض مدفوعة بالكامل.",
+  "creditNewBalanceLabel": "الرصيد الجديد",
+  "creditRequired": "الرجاء إدخال مبلغ الرصيد",
+  "creditNegative": "لا يمكن أن يكون الرصيد سالبًا",
+  "creditPreviewIncrease": "سيتم إضافة {amount}",
+  "@creditPreviewIncrease": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "creditPreviewDeduction": "سيتم خصم {amount}",
+  "@creditPreviewDeduction": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "creditSave": "حفظ الرصيد",
+  "creditUpdated": "تم تحديث الرصيد",
+  "creditChangedElsewhere": "تم تغيير هذا الرصيد من جهاز آخر. يظهر أحدث سجل أعلاه — راجعه ثم احفظ مرة أخرى.",
+  "creditArchivedNote": "استعِد هذا المريض لتعديل رصيده.",
 
   "moreActions": "المزيد",
   "archivePatient": "أرشفة المريض",

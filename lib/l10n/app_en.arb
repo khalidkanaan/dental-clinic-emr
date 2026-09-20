@@ -61,15 +61,46 @@
   "deleteVisitBody": "This permanently deletes the visit and cannot be undone.",
   "paidLabel": "Paid",
   "owedLabel": "Owed",
-  "owedTotal": "Owed {amount}",
-  "@owedTotal": {
+  "creditLabel": "Credit",
+  "creditTooltip": "View credit history and update the balance",
+  "creditSheetTitle": "Patient credit",
+  "creditCurrentBalance": "Current balance",
+  "creditLastUpdated": "Updated {date}",
+  "@creditLastUpdated": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "creditHistoryTitle": "History",
+  "creditHistoryEmpty": "No credit changes yet",
+  "creditIncrease": "Added",
+  "creditDeduction": "Deducted",
+  "creditStartingBalance": "Starting balance",
+  "creditBalanceAfter": "Balance {amount}",
+  "@creditBalanceAfter": {
     "placeholders": {
       "amount": { "type": "String" }
     }
   },
-  "owedOnlyTooltip": "Show only visits with a balance",
-  "noOwedVisitsTitle": "No outstanding balance",
-  "noOwedVisitsBody": "Every visit for this patient is fully paid.",
+  "creditNewBalanceLabel": "New credit balance",
+  "creditRequired": "Please enter a credit amount",
+  "creditNegative": "Credit can't be negative",
+  "creditPreviewIncrease": "Adds {amount}",
+  "@creditPreviewIncrease": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "creditPreviewDeduction": "Deducts {amount}",
+  "@creditPreviewDeduction": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "creditSave": "Save credit",
+  "creditUpdated": "Credit updated",
+  "creditChangedElsewhere": "This credit was changed on another device. The latest history is shown above — review it and save again.",
+  "creditArchivedNote": "Restore this patient to change their credit.",
 
   "moreActions": "More",
   "archivePatient": "Archive Patient",

@@ -13,6 +13,7 @@ import 'package:dental_clinic/core/widgets/patient_avatar.dart';
 import 'package:dental_clinic/features/patients/application/patient_details_controller.dart';
 import 'package:dental_clinic/features/patients/application/patient_search_controller.dart';
 import 'package:dental_clinic/features/patients/data/patient.dart';
+import 'package:dental_clinic/features/patients/presentation/widgets/patient_credit_sheet.dart';
 import 'package:dental_clinic/features/visits/data/visit.dart';
 import 'package:dental_clinic/features/visits/presentation/widgets/visit_card.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
@@ -35,7 +36,6 @@ class PatientDetailsScreen extends ConsumerStatefulWidget {
 class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
   final _scrollController = ScrollController();
   bool _autoRestoreHandled = false;
-  bool _showOwedOnly = false;
 
   @override
   void initState() {
@@ -53,9 +53,6 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
       ref.read(patientDetailsControllerProvider(widget.patientId).notifier);
 
   void _onScroll() {
-    // The "owed only" view loads its full set up front, so infinite scroll is
-    // only needed for the recent-visits list.
-    if (_showOwedOnly) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 300) {
@@ -87,6 +84,13 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
+  }
+
+  Future<void> _openCredit() async {
+    final l10n = AppLocalizations.of(context);
+    final saved =
+        await showPatientCreditSheet(context, patientId: widget.patientId);
+    if (saved && mounted) showAppSnackBar(context, l10n.creditUpdated);
   }
 
   Future<void> _archive(Patient patient) async {
@@ -159,23 +163,6 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     }
   }
 
-  void _toggleOwedFilter(bool value) {
-    setState(() => _showOwedOnly = value);
-    // The actual loading is kicked off from build() so it also covers the case
-    // where the cache was invalidated by a mutation while the filter is open.
-  }
-
-  /// Ensures the full owed-visit set is loaded whenever the filter is showing it
-  /// and it isn't already loaded / loading. Safe to call from build(): it only
-  /// schedules a microtask and the controller call is idempotent.
-  void _maybeLoadOwedVisits(PatientDetailsState state) {
-    if (_showOwedOnly &&
-        state.owedVisits == null &&
-        !state.loadingOwedVisits) {
-      Future.microtask(() => _runMutation(_controller.ensureOwedVisitsLoaded));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -213,7 +200,6 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
           ),
           data: (state) {
             _maybeAutoRestore(state.patient);
-            _maybeLoadOwedVisits(state);
             return _buildContent(context, state);
           },
         ),
@@ -329,16 +315,15 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
                         child: _RestoreBanner(onRestore: _restore),
                       ),
                     ),
-                  // Pinned header: title + total-owed toggle chip.
+                  // Pinned header: title + patient credit button.
                   SliverPersistentHeader(
                     pinned: true,
                     delegate: _VisitHistoryHeaderDelegate(
                       height: 60,
                       background: theme.scaffoldBackgroundColor,
                       child: _VisitHistoryHeader(
-                        totalOwed: state.totalOwed,
-                        showOwedOnly: _showOwedOnly,
-                        onToggle: _toggleOwedFilter,
+                        credit: state.patient.credit,
+                        onCreditTap: _openCredit,
                       ),
                     ),
                   ),
@@ -357,44 +342,6 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     PatientDetailsState state,
     AppLocalizations l10n,
   ) {
-    if (_showOwedOnly) {
-      final owed = state.owedVisits;
-      if (owed == null) {
-        // Still fetching the full owed set.
-        return const [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ),
-        ];
-      }
-      if (owed.isEmpty) {
-        return [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: EmptyState(
-              icon: Icons.verified_outlined,
-              title: l10n.noOwedVisitsTitle,
-              message: l10n.noOwedVisitsBody,
-            ),
-          ),
-        ];
-      }
-      return [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-          sliver: SliverList.builder(
-            itemCount: owed.length,
-            itemBuilder: (context, index) =>
-                _visitCard(context, state, owed[index]),
-          ),
-        ),
-      ];
-    }
-
-    // Default: recent visits, paginated.
     if (state.visits.isEmpty) {
       return [
         SliverFillRemaining(
@@ -446,23 +393,17 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
 
 class _VisitHistoryHeader extends StatelessWidget {
   const _VisitHistoryHeader({
-    required this.totalOwed,
-    required this.showOwedOnly,
-    required this.onToggle,
+    required this.credit,
+    required this.onCreditTap,
   });
 
-  final int totalOwed;
-  final bool showOwedOnly;
-  final ValueChanged<bool> onToggle;
+  final int credit;
+  final VoidCallback onCreditTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    // Only offer the toggle when there is a balance to look at (or it is
-    // already active).
-    final showChip = totalOwed > 0 || showOwedOnly;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -474,27 +415,75 @@ class _VisitHistoryHeader extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const Spacer(),
-          if (showChip)
-            FilterChip(
-              selected: showOwedOnly,
-              showCheckmark: false,
-              visualDensity: VisualDensity.compact,
-              tooltip: l10n.owedOnlyTooltip,
-              avatar: Icon(
-                showOwedOnly
-                    ? Icons.account_balance_wallet_rounded
-                    : Icons.account_balance_wallet_outlined,
-                size: 18,
-                color: showOwedOnly
-                    ? theme.colorScheme.onSecondaryContainer
-                    : theme.colorScheme.error,
-              ),
-              label: Text(
-                l10n.owedTotal(JodMoney.format(totalOwed, locale: locale)),
-              ),
-              onSelected: onToggle,
-            ),
+          _CreditButton(credit: credit, onTap: onCreditTap),
         ],
+      ),
+    );
+  }
+}
+
+/// Compact pill showing the patient's credit. Tapping opens the credit sheet.
+class _CreditButton extends StatelessWidget {
+  const _CreditButton({required this.credit, required this.onTap});
+
+  final int credit;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final hasCredit = credit > 0;
+
+    final bg = hasCredit
+        ? scheme.primaryContainer
+        : scheme.surfaceContainerHighest.withValues(alpha: 0.6);
+    final fg = hasCredit ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+
+    return Tooltip(
+      message: l10n.creditTooltip,
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(10, 7, 6, 7),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.account_balance_wallet_rounded, size: 18, color: fg),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.creditLabel,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: fg.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  JodMoney.format(credit, locale: locale),
+                  textDirection: TextDirection.ltr,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Icons.chevron_left_rounded
+                      : Icons.chevron_right_rounded,
+                  size: 20,
+                  color: fg,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -11,16 +11,11 @@ class PatientWithVisits {
     required this.patient,
     required this.visits,
     this.nextVisitsCursor,
-    this.totalOwed = 0,
   });
 
   final Patient patient;
   final List<Visit> visits;
   final String? nextVisitsCursor;
-
-  /// Server-computed sum of `amountOwed` across ALL of the patient's visits
-  /// (integer hundredths of JOD), independent of how many pages were returned.
-  final int totalOwed;
 }
 
 /// Result of creating a patient (optionally with an initial visit).
@@ -59,8 +54,13 @@ class PatientRepository {
     return Paginated(items: items, nextCursor: json['nextCursor'] as String?);
   }
 
-  /// Load a patient plus the first page of visits and the total owed across all
-  /// of their visits.
+  /// Load just the patient record (no visits).
+  Future<Patient> get(String id) async {
+    final json = await _api.get('/patients/$id');
+    return Patient.fromJson((json['patient'] as Map).cast<String, dynamic>());
+  }
+
+  /// Load a patient plus the first page of visits.
   Future<PatientWithVisits> getWithVisits(String id, {int visitLimit = 30}) async {
     final json = await _api.get('/patients/$id', query: {
       'includeVisits': 'true',
@@ -75,7 +75,6 @@ class PatientRepository {
       patient: patient,
       visits: visits,
       nextVisitsCursor: json['nextVisitsCursor'] as String?,
-      totalOwed: (json['totalOwed'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -111,18 +110,23 @@ class PatientRepository {
     );
   }
 
+  /// Updates name, phone number and/or credit. [credit] is in integer
+  /// hundredths of JOD and must be non-negative (the server rejects negatives).
   Future<Patient> update({
     required String id,
     required String version,
     String? name,
     String? phoneNumber,
+    int? credit,
   }) async {
+    assert(credit == null || credit >= 0, 'credit must be non-negative');
     final json = await _api.patch(
       '/patients/$id',
       headers: {'If-Match': version},
       body: {
         if (name != null) 'name': name,
         if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (credit != null) 'credit': credit,
       },
     );
     return Patient.fromJson((json['patient'] as Map).cast<String, dynamic>());

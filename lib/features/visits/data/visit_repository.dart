@@ -11,19 +11,13 @@ class VisitRepository {
   static const _uuid = Uuid();
 
   /// Lists a patient's visits, newest first.
-  ///
-  /// When [owedOnly] is true the server returns only visits with a remaining
-  /// balance (`amountOwed > 0`). This is used by the "owed only" filter so it
-  /// reflects every owed visit, not just the pages already loaded.
   Future<Paginated<Visit>> list(
     String patientId, {
     int limit = 30,
     String? cursor,
-    bool owedOnly = false,
   }) async {
     final json = await _api.get('/patients/$patientId/visits', query: {
       'limit': limit,
-      if (owedOnly) 'owedOnly': 'true',
       if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
     });
     final items = (json['visits'] as List? ?? [])

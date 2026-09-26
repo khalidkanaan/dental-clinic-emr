@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -36,6 +37,7 @@ class PatientDetailsScreen extends ConsumerStatefulWidget {
 class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
   final _scrollController = ScrollController();
   bool _autoRestoreHandled = false;
+  bool _refreshing = false;
 
   @override
   void initState() {
@@ -57,6 +59,24 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 300) {
       _controller.loadMoreVisits();
+    }
+  }
+
+  /// Reloads the patient and their visits (refresh button, F5, or pulling
+  /// the visit list down on a phone). What's on screen stays visible meanwhile;
+  /// a failure is reported and nothing is lost. The patients list row is
+  /// updated by the listener in build().
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    final error = await _controller.refresh();
+    if (!mounted) return;
+    setState(() => _refreshing = false);
+    if (error != null) {
+      showAppSnackBar(
+        context,
+        localizedError(AppLocalizations.of(context), error),
+      );
     }
   }
 
@@ -165,9 +185,38 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final asyncState = ref.watch(patientDetailsControllerProvider(widget.patientId));
 
+    // Whenever the patient is (re)loaded, bring their row in the patients
+    // list up to date too (e.g. a new last visit date from a visit added on
+    // another device).
+    ref.listen(patientDetailsControllerProvider(widget.patientId), (prev, next) {
+      final patient = next.value?.patient;
+      if (patient != null && !identical(patient, prev?.value?.patient)) {
+        _syncDirectory(patient);
+      }
+    });
+
+    // F5 refreshes (desktop). The autofocused Focus gives the shortcut
+    // somewhere to listen as soon as the page opens.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.f5): () {
+          if (!_refreshing) _refresh();
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: _buildScaffold(context, asyncState),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(
+    BuildContext context,
+    AsyncValue<PatientDetailsState> asyncState,
+  ) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.directoryTitle),
@@ -212,6 +261,17 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        IconButton(
+          tooltip: l10n.actionRefresh,
+          // Shows a small spinner and ignores taps while refreshing.
+          onPressed: _refreshing ? null : _refresh,
+          icon: _refreshing
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.2),
+                )
+              : const Icon(Icons.refresh_rounded),
+        ),
         if (!patient.isArchived)
           IconButton(
             tooltip: l10n.actionEdit,
@@ -304,31 +364,37 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
               ],
             ),
             // Scrollable visit history with a pinned "Visit History" header.
+            // Pulling it down (phones) refreshes the patient.
             Expanded(
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  if (state.patient.isArchived)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: _RestoreBanner(onRestore: _restore),
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  // Lets the pull-down work even when the visits fit on screen.
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    if (state.patient.isArchived)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: _RestoreBanner(onRestore: _restore),
+                        ),
+                      ),
+                    // Pinned header: title + patient credit button.
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _VisitHistoryHeaderDelegate(
+                        height: 60,
+                        background: theme.scaffoldBackgroundColor,
+                        child: _VisitHistoryHeader(
+                          credit: state.patient.credit,
+                          onCreditTap: _openCredit,
+                        ),
                       ),
                     ),
-                  // Pinned header: title + patient credit button.
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _VisitHistoryHeaderDelegate(
-                      height: 60,
-                      background: theme.scaffoldBackgroundColor,
-                      child: _VisitHistoryHeader(
-                        credit: state.patient.credit,
-                        onCreditTap: _openCredit,
-                      ),
-                    ),
-                  ),
-                  ..._buildVisitSlivers(context, state, l10n),
-                ],
+                    ..._buildVisitSlivers(context, state, l10n),
+                  ],
+                ),
               ),
             ),
           ],

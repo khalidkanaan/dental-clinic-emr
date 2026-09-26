@@ -1,19 +1,24 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:dental_clinic/core/formatting/date_formatter.dart';
 import 'package:dental_clinic/core/widgets/patient_avatar.dart';
 import 'package:dental_clinic/features/patients/data/patient.dart';
+import 'package:dental_clinic/features/settings/application/settings_controllers.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
-class PatientListTile extends StatelessWidget {
+class PatientListTile extends ConsumerWidget {
   const PatientListTile({super.key, required this.patient, required this.onTap});
 
   final Patient patient;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final lastVisit = ref.watch(showLastVisitInListProvider) ? patient.lastVisitDate : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -68,6 +73,15 @@ class PatientListTile extends StatelessWidget {
                     ],
                   ),
                 ),
+                // On the opposite side from the name: the right in English,
+                // the left in Arabic (the Row mirrors for right-to-left).
+                if (lastVisit != null) ...[
+                  const SizedBox(width: 12),
+                  _LastVisit(
+                    date: VisitDate.formatForDisplay(lastVisit, locale: locale),
+                  ),
+                ],
+                const SizedBox(width: 4),
                 Icon(
                   Directionality.of(context) == TextDirection.rtl
                       ? Icons.chevron_left_rounded
@@ -78,6 +92,50 @@ class PatientListTile extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact "Last visit / <date>" block at the trailing edge of a patient row.
+class _LastVisit extends StatelessWidget {
+  const _LastVisit({required this.date});
+
+  final String date;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    // Read as one phrase by screen readers ("Last visit Sep 29, 2026").
+    return Semantics(
+      label: l10n.lastVisitLabel(date),
+      excludeSemantics: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        // `end` follows the text direction, so this hugs the outer edge in
+        // both English and Arabic.
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            l10n.patientLastVisit,
+            maxLines: 1,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            date,
+            maxLines: 1,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

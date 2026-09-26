@@ -14,6 +14,7 @@
   "actionOpenPatient": "فتح ملف المريض",
   "actionViewPatient": "عرض المريض",
   "actionRestorePatient": "استعادة المريض",
+  "actionRefresh": "تحديث",
   "actionReloadLatest": "تحميل أحدث نسخة",
 
   "directoryTitle": "المرضى",
@@ -22,11 +23,68 @@
   "newPatient": "مريض جديد",
   "settings": "الإعدادات",
   "archivedChip": "مؤرشف",
+  "lastVisitLabel": "آخر زيارة {date}",
+  "@lastVisitLabel": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+
+  "filtersButtonTooltip": "التصفية",
+  "filtersTitle": "تصفية المرضى",
+  "filterLastVisitSection": "آخر زيارة",
+  "filterAnyTime": "أي وقت",
+  "filterPastMonth": "خلال الشهر الماضي",
+  "filterPast3Months": "خلال آخر 3 أشهر",
+  "filterPast6Months": "خلال آخر 6 أشهر",
+  "filterOver6MonthsAgo": "قبل أكثر من 6 أشهر",
+  "filterOver1YearAgo": "قبل أكثر من سنة",
+  "filterCustomRange": "تواريخ مخصصة",
+  "patientLastVisit": "آخر زيارة",
+  "filterSingleDay": "يوم واحد",
+  "filterDateRangeMode": "فترة زمنية",
+  "filterFrom": "من",
+  "filterTo": "إلى",
+  "filterOnDate": "التاريخ",
+  "filterSelectDate": "اختر التاريخ",
+  "actionApply": "تطبيق",
+  "filterChooseDates": "اختر التواريخ",
+  "filterDateRange": "{from} – {to}",
+  "@filterDateRange": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "filterBalanceSection": "الحساب",
+  "filterOwesMoney": "عليه مبالغ مستحقة",
+  "filterHasCredit": "لديه رصيد",
+  "filterStatusSection": "الحالة",
+  "filterReset": "إعادة تعيين",
+  "filterShowResults": "عرض النتائج",
+  "filtersActiveCount": "{count, plural, =1{عامل تصفية واحد مُطبّق} =2{عاملا تصفية مُطبّقان} few{{count} عوامل تصفية مُطبّقة} other{{count} عامل تصفية مُطبّق}}",
+  "@filtersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "filtersClearAll": "مسح الكل",
+  "filterChipLastVisit": "آخر زيارة: {value}",
+  "@filterChipLastVisit": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "filterChipArchived": "يشمل المؤرشفين",
+  "filterRemove": "إزالة عامل التصفية",
+  "actionClearFilters": "مسح التصفية",
 
   "emptyNoPatientsTitle": "لا يوجد مرضى بعد",
   "emptyNoPatientsBody": "أضف أول مريض للبدء.",
   "emptyNoResultsTitle": "لا توجد نتائج",
   "emptyNoResultsBody": "لا يوجد مرضى مطابقون لبحثك.",
+  "emptyNoFilterMatchesBody": "لا يوجد مرضى مطابقون لعوامل التصفية الحالية.",
+  "emptyNoSearchAndFilterMatchesBody": "لا يوجد مرضى مطابقون لبحثك وعوامل التصفية.",
   "emptyNoVisitsTitle": "لا توجد زيارات بعد",
   "emptyNoVisitsBody": "أضف أول زيارة لهذا المريض.",
 
@@ -126,6 +184,8 @@
   "language": "اللغة",
   "languageEnglish": "English",
   "languageArabic": "العربية",
+  "settingsShowLastVisit": "إظهار تاريخ آخر زيارة",
+  "settingsAlwaysLoadLatest": "تحميل أحدث بيانات المريض دائماً",
   "connection": "الاتصال",
   "apiStatus": "حالة الخدمة",
   "databaseReadiness": "جاهزية قاعدة البيانات",
@@ -172,6 +232,7 @@
   "errPatientArchived": "هذا المريض مؤرشف. استعِده قبل إجراء التغييرات.",
   "errArchiveFirst": "قم بأرشفة المريض قبل الحذف النهائي.",
   "errPatientHasVisits": "احذف جميع زيارات هذا المريض قبل حذفه نهائيًا.",
+  "errPatientVisitBusy": "لا يزال يتم حفظ تغيير آخر على زيارات هذا المريض. الرجاء الانتظار لحظة ثم إعادة المحاولة.",
   "errIdempotencyConflict": "تم إرسال هذا الإجراء بالفعل ببيانات مختلفة.",
   "errRateLimited": "طلبات كثيرة جدًا. الرجاء الانتظار لحظة ثم إعادة المحاولة.",
   "errServiceUnavailable": "الخدمة غير متوفرة مؤقتًا. الرجاء إعادة المحاولة قريبًا.",

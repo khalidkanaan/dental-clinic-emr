@@ -2,7 +2,21 @@ import 'package:uuid/uuid.dart';
 
 import 'package:dental_clinic/core/api/api_client.dart';
 import 'package:dental_clinic/core/api/paginated.dart';
+import 'package:dental_clinic/features/patients/data/patient.dart';
 import 'package:dental_clinic/features/visits/data/visit.dart';
+
+/// Result of adding or editing a visit.
+///
+/// Visit changes update the patient on the server (last visit date, amount
+/// owed and version), so the API returns the refreshed patient alongside the
+/// visit. [patient] is null only when talking to an older API that does not
+/// send it.
+class VisitMutationResult {
+  const VisitMutationResult({required this.visit, this.patient});
+
+  final Visit visit;
+  final Patient? patient;
+}
 
 class VisitRepository {
   VisitRepository(this._api);
@@ -26,7 +40,7 @@ class VisitRepository {
     return Paginated(items: items, nextCursor: json['nextCursor'] as String?);
   }
 
-  Future<Visit> add(
+  Future<VisitMutationResult> add(
     String patientId,
     VisitInput input, {
     required String idempotencyKey,
@@ -36,10 +50,13 @@ class VisitRepository {
       body: input.toJson(),
       headers: {'Idempotency-Key': idempotencyKey},
     );
-    return Visit.fromJson((json['visit'] as Map).cast<String, dynamic>());
+    return VisitMutationResult(
+      visit: Visit.fromJson((json['visit'] as Map).cast<String, dynamic>()),
+      patient: _patientFrom(json),
+    );
   }
 
-  Future<Visit> update(
+  Future<VisitMutationResult> update(
     String patientId,
     String visitId, {
     required String version,
@@ -50,18 +67,29 @@ class VisitRepository {
       headers: {'If-Match': version},
       body: input.toJson(),
     );
-    return Visit.fromJson((json['visit'] as Map).cast<String, dynamic>());
+    return VisitMutationResult(
+      visit: Visit.fromJson((json['visit'] as Map).cast<String, dynamic>()),
+      patient: _patientFrom(json),
+    );
   }
 
-  Future<void> delete(
+  /// Deletes a visit and returns the refreshed patient (null with an older
+  /// API).
+  Future<Patient?> delete(
     String patientId,
     String visitId, {
     required String version,
   }) async {
-    await _api.delete(
+    final json = await _api.delete(
       '/patients/$patientId/visits/$visitId',
       headers: {'If-Match': version},
     );
+    return _patientFrom(json);
+  }
+
+  static Patient? _patientFrom(JsonMap json) {
+    final raw = json['patient'];
+    return raw is Map ? Patient.fromJson(raw.cast<String, dynamic>()) : null;
   }
 
   String newIdempotencyKey() => _uuid.v4();

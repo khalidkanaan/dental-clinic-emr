@@ -55,3 +55,62 @@ class LocaleController extends Notifier<Locale> {
 
 final localeControllerProvider =
     NotifierProvider<LocaleController, Locale>(LocaleController.new);
+
+/// Whether the patients list shows each patient's last visit date. On by
+/// default (and until the stored value loads).
+class ShowLastVisitController extends Notifier<bool> {
+  /// Set once the user flips the switch, so a slow initial load can't
+  /// overwrite their choice.
+  bool _changed = false;
+
+  @override
+  bool build() {
+    _load();
+    return true;
+  }
+
+  Future<void> _load() async {
+    final stored =
+        await ref.read(appPreferencesProvider).readShowLastVisitInList();
+    if (!_changed && stored != null) state = stored;
+  }
+
+  Future<void> set(bool value) async {
+    _changed = true;
+    state = value;
+    await ref.read(appPreferencesProvider).writeShowLastVisitInList(value);
+  }
+}
+
+final showLastVisitInListProvider =
+    NotifierProvider<ShowLastVisitController, bool>(ShowLastVisitController.new);
+
+/// Whether a patient is loaded from the server every time they're opened.
+/// Off by default (and until the stored value loads): a patient is then kept
+/// in memory after the first load, and refreshed on demand.
+class AlwaysLoadLatestPatientController extends Notifier<bool> {
+  bool _changed = false;
+
+  @override
+  bool build() {
+    _load();
+    return false;
+  }
+
+  Future<void> _load() async {
+    final stored =
+        await ref.read(appPreferencesProvider).readAlwaysLoadLatestPatient();
+    if (!_changed && stored != null) state = stored;
+  }
+
+  Future<void> set(bool value) async {
+    _changed = true;
+    state = value;
+    await ref.read(appPreferencesProvider).writeAlwaysLoadLatestPatient(value);
+  }
+}
+
+final alwaysLoadLatestPatientProvider =
+    NotifierProvider<AlwaysLoadLatestPatientController, bool>(
+  AlwaysLoadLatestPatientController.new,
+);

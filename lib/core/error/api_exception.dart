@@ -67,6 +67,10 @@ class ApiErrorCode {
   // Visits.
   static const visitNotFound = 'visit_not_found';
 
+  /// Another visit change for the same patient is still being saved (409).
+  /// Safe to retry after a moment.
+  static const patientVisitBusy = 'patient_visit_busy';
+
   // Concurrency / idempotency.
   static const versionConflict = 'version_conflict';
   static const versionRequired = 'version_required';
@@ -78,6 +82,9 @@ class ApiErrorCode {
   static const noChanges = 'no_changes';
   static const invalidLimit = 'invalid_limit';
   static const invalidCursor = 'invalid_cursor';
+  static const invalidFilter = 'invalid_filter';
+  static const invalidPatientId = 'invalid_patient_id';
+  static const invalidId = 'invalid_id';
 
   // Throttling / availability.
   static const rateLimited = 'rate_limited';

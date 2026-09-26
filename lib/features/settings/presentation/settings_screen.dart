@@ -20,6 +20,8 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeControllerProvider);
     final locale = ref.watch(localeControllerProvider);
+    final showLastVisit = ref.watch(showLastVisitInListProvider);
+    final alwaysLoadLatest = ref.watch(alwaysLoadLatestPatientProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -67,6 +69,29 @@ class SettingsScreen extends ConsumerWidget {
                   onSelectionChanged: (selection) => ref
                       .read(localeControllerProvider.notifier)
                       .set(Locale(selection.first)),
+                ),
+              ),
+              _SectionCard(
+                title: l10n.directoryTitle,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.settingsShowLastVisit),
+                      value: showLastVisit,
+                      onChanged: (value) => ref
+                          .read(showLastVisitInListProvider.notifier)
+                          .set(value),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.settingsAlwaysLoadLatest),
+                      value: alwaysLoadLatest,
+                      onChanged: (value) => ref
+                          .read(alwaysLoadLatestPatientProvider.notifier)
+                          .set(value),
+                    ),
+                  ],
                 ),
               ),
               _ConnectionCard(),

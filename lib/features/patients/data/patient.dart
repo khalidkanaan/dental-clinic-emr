@@ -58,6 +58,9 @@ class Patient {
     this.credit = 0,
     this.creditUpdatedAt,
     this.creditHistory = const [],
+    this.lastVisitDate,
+    this.lastVisitOwed,
+    this.visitSummaryCurrent = true,
     this.archivedAt,
     this.createdAt,
     this.updatedAt,
@@ -83,6 +86,26 @@ class Patient {
 
   /// Previous credit values, oldest first (server keeps the latest 50).
   final List<CreditHistoryEntry> creditHistory;
+
+  /// Date of the most recent visit (`YYYY-MM-DD`), or null when the patient
+  /// has no visits or the date is not known yet (see [visitSummaryCurrent]).
+  /// Maintained by the server whenever visits change.
+  final String? lastVisitDate;
+
+  /// The `amountOwed` recorded on the most recent visit, in integer
+  /// hundredths of JOD. The clinic enters the patient's current outstanding
+  /// balance on each visit, so this is what the patient owes now; 0 means
+  /// nothing is owed.
+  ///
+  /// Null means **unknown**, not zero: the server is still reconciling the
+  /// patient's visit summary (for example after a failed update, or before
+  /// the backfill has run). Never display or treat null as "owes nothing".
+  final int? lastVisitOwed;
+
+  /// False while the server's visit summary for this patient is out of date,
+  /// in which case [lastVisitDate] and [lastVisitOwed] are null (unknown).
+  /// Older API versions don't send this field, so it defaults to true.
+  final bool visitSummaryCurrent;
 
   final String? archivedAt;
   final String? createdAt;
@@ -138,7 +161,10 @@ class Patient {
 
   factory Patient.fromJson(JsonMap json) {
     final rawCredit = (json['credit'] as num?)?.toInt() ?? 0;
+    final rawOwed = (json['lastVisitOwed'] as num?)?.toInt();
+    final summaryCurrent = json['visitSummaryCurrent'] != false;
     final rawHistory = json['creditHistory'];
+    final rawLastVisit = json['lastVisitDate'];
     return Patient(
       id: json['id'] as String,
       name: (json['name'] as String?) ?? '',
@@ -153,6 +179,14 @@ class Patient {
               .map((e) => CreditHistoryEntry.fromJson(e.cast<String, dynamic>()))
               .toList()
           : const [],
+      lastVisitDate: summaryCurrent &&
+              rawLastVisit is String &&
+              rawLastVisit.isNotEmpty
+          ? rawLastVisit
+          : null,
+      lastVisitOwed:
+          summaryCurrent && rawOwed != null && rawOwed >= 0 ? rawOwed : null,
+      visitSummaryCurrent: summaryCurrent,
       archivedAt: json['archivedAt'] as String?,
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
@@ -174,6 +208,9 @@ class Patient {
       credit: credit,
       creditUpdatedAt: creditUpdatedAt,
       creditHistory: creditHistory,
+      lastVisitDate: lastVisitDate,
+      lastVisitOwed: lastVisitOwed,
+      visitSummaryCurrent: visitSummaryCurrent,
       archivedAt: archivedAt,
       createdAt: createdAt,
       updatedAt: updatedAt,

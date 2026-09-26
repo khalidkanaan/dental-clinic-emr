@@ -14,6 +14,7 @@
   "actionOpenPatient": "Open Patient",
   "actionViewPatient": "View Patient",
   "actionRestorePatient": "Restore Patient",
+  "actionRefresh": "Refresh",
   "actionReloadLatest": "Reload Latest",
 
   "directoryTitle": "Patients",
@@ -22,11 +23,68 @@
   "newPatient": "New Patient",
   "settings": "Settings",
   "archivedChip": "Archived",
+  "lastVisitLabel": "Last visit {date}",
+  "@lastVisitLabel": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+
+  "filtersButtonTooltip": "Filters",
+  "filtersTitle": "Filter patients",
+  "filterLastVisitSection": "Last visit",
+  "filterAnyTime": "Any time",
+  "filterPastMonth": "Past month",
+  "filterPast3Months": "Past 3 months",
+  "filterPast6Months": "Past 6 months",
+  "filterOver6MonthsAgo": "Over 6 months ago",
+  "filterOver1YearAgo": "Over a year ago",
+  "filterCustomRange": "Custom dates",
+  "patientLastVisit": "Last visit",
+  "filterSingleDay": "Single day",
+  "filterDateRangeMode": "Date range",
+  "filterFrom": "From",
+  "filterTo": "To",
+  "filterOnDate": "Date",
+  "filterSelectDate": "Select date",
+  "actionApply": "Apply",
+  "filterChooseDates": "Choose dates",
+  "filterDateRange": "{from} – {to}",
+  "@filterDateRange": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "filterBalanceSection": "Balance",
+  "filterOwesMoney": "Owes money",
+  "filterHasCredit": "Has credit",
+  "filterStatusSection": "Status",
+  "filterReset": "Reset",
+  "filterShowResults": "Show results",
+  "filtersActiveCount": "{count, plural, =1{1 filter applied} other{{count} filters applied}}",
+  "@filtersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "filtersClearAll": "Clear all",
+  "filterChipLastVisit": "Last visit: {value}",
+  "@filterChipLastVisit": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "filterChipArchived": "Including archived",
+  "filterRemove": "Remove filter",
+  "actionClearFilters": "Clear filters",
 
   "emptyNoPatientsTitle": "No patients yet",
   "emptyNoPatientsBody": "Add your first patient to get started.",
   "emptyNoResultsTitle": "No matches",
   "emptyNoResultsBody": "No patients match your search.",
+  "emptyNoFilterMatchesBody": "No patients match the current filters.",
+  "emptyNoSearchAndFilterMatchesBody": "No patients match your search and filters.",
   "emptyNoVisitsTitle": "No visits yet",
   "emptyNoVisitsBody": "Add the first visit for this patient.",
 
@@ -126,6 +184,8 @@
   "language": "Language",
   "languageEnglish": "English",
   "languageArabic": "العربية",
+  "settingsShowLastVisit": "Show last visit date",
+  "settingsAlwaysLoadLatest": "Always load the latest patient record",
   "connection": "Connection",
   "apiStatus": "API status",
   "databaseReadiness": "Database readiness",
@@ -172,6 +232,7 @@
   "errPatientArchived": "This patient is archived. Restore them before making changes.",
   "errArchiveFirst": "Archive the patient before permanently deleting.",
   "errPatientHasVisits": "Delete all of this patient's visits before permanently deleting them.",
+  "errPatientVisitBusy": "Another change to this patient's visits is still being saved. Please wait a moment and try again.",
   "errIdempotencyConflict": "This action was already submitted with different data.",
   "errRateLimited": "Too many requests. Please wait a moment and try again.",
   "errServiceUnavailable": "The service is temporarily unavailable. Please try again shortly.",

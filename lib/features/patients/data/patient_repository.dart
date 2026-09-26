@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:dental_clinic/core/api/api_client.dart';
 import 'package:dental_clinic/core/api/paginated.dart';
 import 'package:dental_clinic/features/patients/data/patient.dart';
+import 'package:dental_clinic/features/patients/domain/patient_filters.dart';
 import 'package:dental_clinic/features/visits/data/visit.dart';
 
 /// Result of loading a patient with the first page of visits in one request.
@@ -33,17 +34,23 @@ class PatientRepository {
   static const _uuid = Uuid();
 
   /// Search / list patients. Prefix mode by default.
+  ///
+  /// [filters] are combined (AND) with the text [query]. Relative date
+  /// filters such as "past month" are resolved against [today], which
+  /// defaults to now; pass the same value for every page of one search so
+  /// pagination stays consistent across midnight.
   Future<Paginated<Patient>> search({
     String query = '',
-    bool includeArchived = false,
+    PatientFilters filters = PatientFilters.none,
     bool contains = false,
     int limit = 30,
     String? cursor,
+    DateTime? today,
   }) async {
     final json = await _api.get('/patients', query: {
       if (query.isNotEmpty) 'q': query,
       if (contains) 'mode': 'contains',
-      if (includeArchived) 'includeArchived': 'true',
+      ...filters.toQueryParameters(today ?? DateTime.now()),
       'limit': limit,
       if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
     });

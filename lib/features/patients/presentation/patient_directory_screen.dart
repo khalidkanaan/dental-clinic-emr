@@ -7,6 +7,8 @@ import 'package:dental_clinic/core/widgets/error_view.dart';
 import 'package:dental_clinic/core/widgets/max_width.dart';
 import 'package:dental_clinic/core/widgets/clinic_logo.dart';
 import 'package:dental_clinic/features/patients/application/patient_search_controller.dart';
+import 'package:dental_clinic/features/patients/presentation/widgets/active_filters_bar.dart';
+import 'package:dental_clinic/features/patients/presentation/widgets/patient_filter_sheet.dart';
 import 'package:dental_clinic/features/patients/presentation/widgets/patient_list_tile.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
@@ -22,6 +24,7 @@ class _PatientDirectoryScreenState
     extends ConsumerState<PatientDirectoryScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _filterSheetOpen = false;
 
   @override
   void initState() {
@@ -44,11 +47,25 @@ class _PatientDirectoryScreenState
     }
   }
 
+  Future<void> _openFilters() async {
+    if (_filterSheetOpen) return; // ignore double taps
+    _filterSheetOpen = true;
+    try {
+      final controller = ref.read(patientSearchControllerProvider.notifier);
+      final current = ref.read(patientSearchControllerProvider).filters;
+      final result = await showPatientFilterSheet(context, initial: current);
+      if (result != null) controller.applyFilters(result);
+    } finally {
+      _filterSheetOpen = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(patientSearchControllerProvider);
     final controller = ref.read(patientSearchControllerProvider.notifier);
+    final filters = state.filters;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,41 +91,52 @@ class _PatientDirectoryScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 8),
-              TextField(
-                controller: _searchController,
-                onChanged: controller.onQueryChanged,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: l10n.searchHint,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: state.query.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () {
-                            _searchController.clear();
-                            controller.onQueryChanged('');
-                          },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: controller.onQueryChanged,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchHint,
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: state.query.isEmpty
+                            ? null
+                            : IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  controller.onQueryChanged('');
+                                },
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterButton(
+                    activeCount: filters.activeCount,
+                    onPressed: _openFilters,
+                  ),
+                ],
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                alignment: Alignment.topCenter,
+                child: filters.isActive
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: ActiveFiltersBar(
+                          filters: filters,
+                          onRemove: controller.removeFilter,
+                          onClearAll: controller.clearFilters,
+                          onEdit: _openFilters,
                         ),
-                ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
               const SizedBox(height: 8),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: FilterChip(
-                  label: Text(l10n.showArchived),
-                  selected: state.includeArchived,
-                  onSelected: controller.setIncludeArchived,
-                  showCheckmark: false,
-                  avatar: Icon(
-                    state.includeArchived
-                        ? Icons.inventory_2_rounded
-                        : Icons.inventory_2_outlined,
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
               Expanded(child: _buildResults(context, state, controller)),
             ],
           ),
@@ -131,7 +159,24 @@ class _PatientDirectoryScreenState
       return ErrorView(error: state.error!, onRetry: controller.refresh);
     }
     if (state.isEmpty) {
-      final searching = state.query.trim().isNotEmpty;
+      final searching = state.hasQuery;
+      final filtering = state.filters.isActive;
+
+      if (filtering) {
+        return EmptyState(
+          icon: Icons.filter_alt_off_rounded,
+          title: l10n.emptyNoResultsTitle,
+          message: searching
+              ? l10n.emptyNoSearchAndFilterMatchesBody
+              : l10n.emptyNoFilterMatchesBody,
+          action: FilledButton.tonalIcon(
+            onPressed: controller.clearFilters,
+            icon: const Icon(Icons.filter_alt_off_rounded),
+            label: Text(l10n.actionClearFilters),
+          ),
+        );
+      }
+
       return EmptyState(
         icon: searching ? Icons.search_off_rounded : Icons.people_outline_rounded,
         title: searching ? l10n.emptyNoResultsTitle : l10n.emptyNoPatientsTitle,
@@ -158,6 +203,77 @@ class _PatientDirectoryScreenState
             onTap: () => context.push('/patient/${patient.id}'),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Square button beside the search field that opens the filter panel.
+///
+/// Matches the search field's height and shape. When filters are active it
+/// switches to the primary tint and shows how many are applied.
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({required this.activeCount, required this.onPressed});
+
+  /// Same height as the themed search field (14 + 24 + 14).
+  static const double _size = 52;
+
+  final int activeCount;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final active = activeCount > 0;
+
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: BorderSide(
+        color: active ? scheme.primary : scheme.outlineVariant,
+        width: active ? 1.6 : 1,
+      ),
+    );
+
+    // One merged node for screen readers: the name, how many filters are on,
+    // and the tap action (the tooltip is for mouse/long-press users).
+    return Semantics(
+      button: true,
+      label: active
+          ? '${l10n.filtersButtonTooltip}, ${l10n.filtersActiveCount(activeCount)}'
+          : l10n.filtersButtonTooltip,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: l10n.filtersButtonTooltip,
+        child: SizedBox.square(
+          dimension: _size,
+          child: Material(
+            color: active
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            shape: shape,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed,
+              customBorder: shape,
+              child: Center(
+                child: Badge(
+                  isLabelVisible: active,
+                  label: Text('$activeCount'),
+                  backgroundColor: scheme.primary,
+                  textColor: scheme.onPrimary,
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: active
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

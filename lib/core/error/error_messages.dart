@@ -19,6 +19,8 @@ String localizedError(AppLocalizations l10n, ApiException e) {
       return l10n.errArchiveFirst;
     case ApiErrorCode.patientHasVisits:
       return l10n.errPatientHasVisits;
+    case ApiErrorCode.patientVisitBusy:
+      return l10n.errPatientVisitBusy;
     case ApiErrorCode.versionConflict:
     case ApiErrorCode.versionRequired:
       return l10n.versionConflictTitle;
@@ -41,6 +43,9 @@ String localizedError(AppLocalizations l10n, ApiException e) {
     case ApiErrorCode.noChanges:
     case ApiErrorCode.invalidLimit:
     case ApiErrorCode.invalidCursor:
+    case ApiErrorCode.invalidFilter:
+    case ApiErrorCode.invalidPatientId:
+    case ApiErrorCode.invalidId:
       return l10n.errValidation;
     case ApiErrorCode.serverConfig:
       return l10n.errServerConfig;

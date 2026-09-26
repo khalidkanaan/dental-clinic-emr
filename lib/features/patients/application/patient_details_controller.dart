@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:flutter_riverpod/misc.dart' show KeepAliveLink;
 import 'package:dental_clinic/core/config/app_config.dart';
 import 'package:dental_clinic/core/error/api_exception.dart';
 import 'package:dental_clinic/core/providers.dart';
+import 'package:dental_clinic/features/patients/application/patient_search_controller.dart';
 import 'package:dental_clinic/features/patients/data/patient.dart';
+import 'package:dental_clinic/features/settings/application/settings_controllers.dart';
 import 'package:dental_clinic/features/visits/data/visit.dart';
 
 class PatientDetailsState {
@@ -51,8 +53,30 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
 
   final String patientId;
 
+  /// Held while this patient should stay in memory after their screen closes.
+  KeepAliveLink? _keepAlive;
+
   @override
-  Future<PatientDetailsState> build() => _fetchPatientDetails();
+  Future<PatientDetailsState> build() {
+    _keepAlive = null;
+    _applyCaching(ref.read(alwaysLoadLatestPatientProvider));
+    ref.listen<bool>(alwaysLoadLatestPatientProvider, (_, next) {
+      _applyCaching(next);
+    });
+    return _fetchPatientDetails();
+  }
+
+  /// With "Always load the latest patient record" on, the patient is dropped
+  /// as soon as nothing shows them, so opening them again loads from the
+  /// server. With it off, they stay in memory until refreshed.
+  void _applyCaching(bool alwaysLoadLatest) {
+    if (alwaysLoadLatest) {
+      _keepAlive?.close();
+      _keepAlive = null;
+    } else {
+      _keepAlive ??= ref.keepAlive();
+    }
+  }
 
   PatientDetailsState get _current => state.requireValue;
 
@@ -74,6 +98,37 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
     // `copyWithPrevious` is an internal Riverpod API in Riverpod 3, so avoid it.
     state = const AsyncLoading<PatientDetailsState>();
     state = await AsyncValue.guard(_fetchPatientDetails);
+  }
+
+  /// Fetches the latest patient and first page of visits while the current
+  /// ones stay on screen (no loading spinner), so changes made on another
+  /// device appear. Used by the patient page's refresh button, F5 and
+  /// pull-down.
+  ///
+  /// Returns null on success, or the error (what's shown is then left as it
+  /// was). If the patient hasn't loaded yet, does a full load instead.
+  Future<ApiException?> refresh() async {
+    if (!state.hasValue) {
+      await reload();
+      final error = state.error;
+      if (error == null) return null;
+      return error is ApiException
+          ? error
+          : const ApiException(code: ApiErrorCode.unknown);
+    }
+
+    final before = state.value;
+    try {
+      final fresh = await _fetchPatientDetails();
+      // Anything that changed the state while we were fetching (a visit
+      // saved here, more visits loaded) wins; don't replace it with a
+      // response that may predate it.
+      if (!identical(state.value, before)) return null;
+      state = AsyncData(fresh);
+      return null;
+    } on ApiException catch (e) {
+      return e;
+    }
   }
 
   Future<void> loadMoreVisits() async {
@@ -116,15 +171,16 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
     VisitInput input, {
     required String idempotencyKey,
   }) async {
-    final visit = await ref.read(visitRepositoryProvider).add(
+    final result = await ref.read(visitRepositoryProvider).add(
           patientId,
           input,
           idempotencyKey: idempotencyKey,
         );
 
-    final visits = [..._current.visits, visit]..sort(_byDateDesc);
+    final visits = [..._current.visits, result.visit]..sort(_byDateDesc);
     state = AsyncData(_current.copyWith(visits: visits));
-    return visit;
+    _applyServerPatient(result.patient);
+    return result.visit;
   }
 
   Future<Visit> editVisit(
@@ -132,7 +188,7 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
     required String version,
     required VisitInput input,
   }) async {
-    final updated = await ref.read(visitRepositoryProvider).update(
+    final result = await ref.read(visitRepositoryProvider).update(
           patientId,
           visitId,
           version: version,
@@ -140,19 +196,20 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
         );
 
     final visits = _current.visits
-        .map((visit) => visit.id == visitId ? updated : visit)
+        .map((visit) => visit.id == visitId ? result.visit : visit)
         .toList()
       ..sort(_byDateDesc);
 
     state = AsyncData(_current.copyWith(visits: visits));
-    return updated;
+    _applyServerPatient(result.patient);
+    return result.visit;
   }
 
   Future<void> deleteVisit(
     String visitId, {
     required String version,
   }) async {
-    await ref.read(visitRepositoryProvider).delete(
+    final patient = await ref.read(visitRepositoryProvider).delete(
           patientId,
           visitId,
           version: version,
@@ -163,6 +220,17 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
         visits: _current.visits.where((visit) => visit.id != visitId).toList(),
       ),
     );
+    _applyServerPatient(patient);
+  }
+
+  /// Visit changes update the patient on the server (last visit date, amount
+  /// owed, version). Adopt the returned copy here and in the directory so a
+  /// later edit/archive/credit change uses the current version, and so the
+  /// directory filters see the new last visit date and balance.
+  void _applyServerPatient(Patient? patient) {
+    if (patient == null || !state.hasValue) return;
+    state = AsyncData(_current.copyWith(patient: patient));
+    ref.read(patientSearchControllerProvider.notifier).applyPatientChange(patient);
   }
 
   Future<Patient> editPatient({
@@ -182,12 +250,13 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
 
   /// Sets the patient's credit balance to [credit] (hundredths of JOD, >= 0).
   ///
-  /// Adding a visit silently bumps the patient record on the server, which
-  /// changes its version. If the save hits a version conflict, the latest
-  /// patient is fetched: when its credit is still the value the user was
-  /// looking at, the save is retried once with the fresh version. If the
-  /// credit itself was changed elsewhere, the fresh patient is put into state
-  /// (so the sheet shows the real history) and the conflict is rethrown.
+  /// The patient record can change underneath us (for example a visit added
+  /// on another device updates its last visit date and version). If the save
+  /// hits a version conflict, the latest patient is fetched: when its credit
+  /// is still the value the user was looking at, the save is retried once
+  /// with the fresh version. If the credit itself was changed elsewhere, the
+  /// fresh patient is put into state (so the sheet shows the real history)
+  /// and the conflict is rethrown.
   Future<Patient> updateCredit(int credit) async {
     if (credit < 0) {
       throw const ApiException(code: ApiErrorCode.validationError);
@@ -260,9 +329,9 @@ class PatientDetailsController extends AsyncNotifier<PatientDetailsState> {
       b.visitDate.compareTo(a.visitDate);
 }
 
-final patientDetailsControllerProvider = AsyncNotifierProvider.family<
-    PatientDetailsController,
-    PatientDetailsState,
-    String>(
+/// Auto-disposed, but kept in memory unless "Always load the latest patient
+/// record" is on (see [PatientDetailsController._applyCaching]).
+final patientDetailsControllerProvider = AsyncNotifierProvider.autoDispose
+    .family<PatientDetailsController, PatientDetailsState, String>(
   PatientDetailsController.new,
 );

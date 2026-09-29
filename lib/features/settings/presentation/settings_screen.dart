@@ -10,6 +10,7 @@ import 'package:dental_clinic/features/health/data/health_repository.dart';
 import 'package:dental_clinic/features/settings/application/package_info_provider.dart';
 import 'package:dental_clinic/features/settings/application/settings_controllers.dart';
 import 'package:dental_clinic/features/setup/application/auth_controller.dart';
+import 'package:dental_clinic/features/whatsapp/presentation/whatsapp_settings_card.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -69,6 +70,7 @@ class SettingsScreen extends ConsumerWidget {
                       .set(Locale(selection.first)),
                 ),
               ),
+              const WhatsAppSettingsCard(),
               _ConnectionCard(),
               _AppInfoCard(),
               const SizedBox(height: 8),

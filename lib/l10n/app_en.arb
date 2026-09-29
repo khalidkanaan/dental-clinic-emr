@@ -119,6 +119,68 @@
 
   "callPatient": "Call",
 
+  "whatsappPatient": "WhatsApp",
+  "whatsappOpenFailed": "Couldn't open WhatsApp. Make sure it's installed on this device.",
+  "whatsappInvalidPhone": "This patient's phone number can't be used on WhatsApp. Check that it's complete.",
+  "whatsappSettingsTitle": "WhatsApp message",
+  "whatsappSettingsBody": "This message is ready to send when you tap the WhatsApp button on a patient. Placeholders fill in the patient's details for you.",
+  "whatsappMessageLabel": "Message",
+  "whatsappMessageHint": "Type your message…",
+  "whatsappResetDefault": "Reset to default",
+  "whatsappUnknownPlaceholders": "Not recognized, will be sent as typed: {names}",
+  "@whatsappUnknownPlaceholders": {
+    "placeholders": {
+      "names": { "type": "String" }
+    }
+  },
+  "whatsappPreview": "Preview",
+  "whatsappClinicName": "Clinic name",
+  "whatsappClinicNameHelper": "Used for {token}",
+  "@whatsappClinicNameHelper": {
+    "placeholders": {
+      "token": { "type": "String" }
+    }
+  },
+  "whatsappCountryCode": "Country code",
+  "whatsappCountryCodeHelper": "Added to numbers starting with 0",
+  "whatsappSaved": "WhatsApp message saved",
+  "whatsappDefaultTemplate": "Hello {patient},\n\nThis is {clinic}. We hope you're doing well! Feel free to reply to this message if you have any questions or would like to book your next appointment.\n\nThank you!",
+  "@whatsappDefaultTemplate": {
+    "placeholders": {
+      "patient": { "type": "String" },
+      "clinic": { "type": "String" }
+    }
+  },
+  "whatsappSampleName": "Sara Ahmad",
+  "whatsappSampleTreatment": "Teeth cleaning",
+  "placeholdersTitle": "Placeholders",
+  "placeholdersIntro": "Placeholders are swapped for the patient's details when WhatsApp opens. Tap one to add it to your message.",
+  "placeholdersExample": "Example",
+  "placeholdersExampleValue": "e.g. {value}",
+  "@placeholdersExampleValue": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "placeholdersTapToInsert": "Tap to insert",
+  "placeholdersTip": "Capital letters don't matter, and every placeholder works in English or Arabic — {english} and {arabic} are the same. Anything not listed here is sent as typed.",
+  "@placeholdersTip": {
+    "placeholders": {
+      "english": { "type": "String" },
+      "arabic": { "type": "String" }
+    }
+  },
+  "placeholderPatient": "Patient's full name",
+  "placeholderFirstName": "Patient's first name",
+  "placeholderPhone": "Patient's phone number",
+  "placeholderClinic": "Your clinic's name",
+  "placeholderToday": "Today's date",
+  "placeholderLastVisit": "Date of the most recent visit",
+  "placeholderLastTreatment": "Treatment done at the most recent visit",
+  "placeholderLastPaid": "Amount paid at the most recent visit",
+  "placeholderLastOwed": "Amount owed from the most recent visit",
+  "placeholderCredit": "Patient's current credit balance",
+
   "settingsTitle": "Settings",
   "appearance": "Appearance",
   "appearanceLight": "Light",

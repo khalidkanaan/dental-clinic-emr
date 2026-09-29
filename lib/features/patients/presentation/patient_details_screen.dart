@@ -16,6 +16,11 @@ import 'package:dental_clinic/features/patients/data/patient.dart';
 import 'package:dental_clinic/features/patients/presentation/widgets/patient_credit_sheet.dart';
 import 'package:dental_clinic/features/visits/data/visit.dart';
 import 'package:dental_clinic/features/visits/presentation/widgets/visit_card.dart';
+import 'package:dental_clinic/features/whatsapp/application/whatsapp_message.dart';
+import 'package:dental_clinic/features/whatsapp/application/whatsapp_settings_controller.dart';
+import 'package:dental_clinic/features/whatsapp/data/whatsapp_launcher.dart';
+import 'package:dental_clinic/features/whatsapp/domain/message_template.dart';
+import 'package:dental_clinic/features/whatsapp/presentation/whatsapp_brand.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
 class PatientDetailsScreen extends ConsumerStatefulWidget {
@@ -36,6 +41,7 @@ class PatientDetailsScreen extends ConsumerStatefulWidget {
 class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
   final _scrollController = ScrollController();
   bool _autoRestoreHandled = false;
+  bool _openingWhatsApp = false;
 
   @override
   void initState() {
@@ -83,6 +89,52 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
     final uri = Uri(scheme: 'tel', path: phone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  /// Opens WhatsApp with the message from Settings, placeholders filled in
+  /// with this patient's details.
+  Future<void> _openWhatsApp() async {
+    if (_openingWhatsApp) return;
+    final state =
+        ref.read(patientDetailsControllerProvider(widget.patientId)).value;
+    if (state == null) return;
+
+    final l10n = AppLocalizations.of(context);
+    final language = Localizations.localeOf(context).languageCode;
+
+    _openingWhatsApp = true;
+    try {
+      final settings = await ref
+          .read(whatsAppSettingsControllerProvider.notifier)
+          .ready();
+      if (!mounted) return;
+
+      final phone = WhatsAppLauncher.normalizePhone(
+        state.patient.phoneNumber,
+        defaultCountryCode: settings.countryCode,
+      );
+      if (phone == null) {
+        showAppSnackBar(context, l10n.whatsappInvalidPhone);
+        return;
+      }
+
+      final message = MessageTemplate.render(
+        settings.templateOr(WhatsAppMessage.defaultTemplate(l10n, language)),
+        WhatsAppMessage.valuesFor(
+          patient: state.patient,
+          visits: state.visits,
+          clinicName: settings.clinicNameOr(l10n.appTitle),
+          locale: language,
+        ),
+      );
+
+      final opened = await WhatsAppLauncher.open(phone: phone, message: message);
+      if (!opened && mounted) {
+        showAppSnackBar(context, l10n.whatsappOpenFailed);
+      }
+    } finally {
+      _openingWhatsApp = false;
     }
   }
 
@@ -295,6 +347,7 @@ class _PatientDetailsScreenState extends ConsumerState<PatientDetailsScreen> {
                   child: _PatientHeader(
                     patient: state.patient,
                     onCall: () => _callPhone(state.patient.phoneNumber),
+                    onWhatsApp: _openWhatsApp,
                   ),
                 ),
                 Divider(
@@ -536,10 +589,15 @@ class _VisitHistoryHeaderDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class _PatientHeader extends StatelessWidget {
-  const _PatientHeader({required this.patient, required this.onCall});
+  const _PatientHeader({
+    required this.patient,
+    required this.onCall,
+    required this.onWhatsApp,
+  });
 
   final Patient patient;
   final VoidCallback onCall;
+  final VoidCallback onWhatsApp;
 
   @override
   Widget build(BuildContext context) {
@@ -595,6 +653,12 @@ class _PatientHeader extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: 8),
+        WhatsAppButton(
+          tooltip: l10n.whatsappPatient,
+          onPressed: onWhatsApp,
+        ),
+        const SizedBox(width: 8),
         IconButton.filledTonal(
           tooltip: l10n.callPatient,
           onPressed: onCall,

@@ -119,6 +119,68 @@
 
   "callPatient": "اتصال",
 
+  "whatsappPatient": "واتساب",
+  "whatsappOpenFailed": "تعذّر فتح واتساب. تأكد من تثبيته على هذا الجهاز.",
+  "whatsappInvalidPhone": "لا يمكن استخدام رقم هاتف هذا المريض على واتساب. تأكد من أنه مكتمل.",
+  "whatsappSettingsTitle": "رسالة واتساب",
+  "whatsappSettingsBody": "تُجهَّز هذه الرسالة تلقائيًا عند الضغط على زر واتساب في ملف المريض، وتقوم المتغيرات بإدراج بيانات المريض نيابةً عنك.",
+  "whatsappMessageLabel": "الرسالة",
+  "whatsappMessageHint": "اكتب رسالتك…",
+  "whatsappResetDefault": "استعادة الرسالة الافتراضية",
+  "whatsappUnknownPlaceholders": "غير معروف وسيُرسل كما هو: {names}",
+  "@whatsappUnknownPlaceholders": {
+    "placeholders": {
+      "names": { "type": "String" }
+    }
+  },
+  "whatsappPreview": "معاينة",
+  "whatsappClinicName": "اسم العيادة",
+  "whatsappClinicNameHelper": "يُستخدم في {token}",
+  "@whatsappClinicNameHelper": {
+    "placeholders": {
+      "token": { "type": "String" }
+    }
+  },
+  "whatsappCountryCode": "رمز الدولة",
+  "whatsappCountryCodeHelper": "يُضاف للأرقام التي تبدأ بـ 0",
+  "whatsappSaved": "تم حفظ رسالة واتساب",
+  "whatsappDefaultTemplate": "مرحبًا {patient}،\n\nمعك {clinic}. نتمنى أن تكون بخير! لا تتردد في الرد على هذه الرسالة إذا كان لديك أي استفسار أو رغبت في حجز موعدك القادم.\n\nشكرًا لك!",
+  "@whatsappDefaultTemplate": {
+    "placeholders": {
+      "patient": { "type": "String" },
+      "clinic": { "type": "String" }
+    }
+  },
+  "whatsappSampleName": "سارة أحمد",
+  "whatsappSampleTreatment": "تنظيف الأسنان",
+  "placeholdersTitle": "المتغيرات",
+  "placeholdersIntro": "تُستبدل المتغيرات ببيانات المريض عند فتح واتساب. اضغط على أي متغير لإضافته إلى رسالتك.",
+  "placeholdersExample": "مثال",
+  "placeholdersExampleValue": "مثال: {value}",
+  "@placeholdersExampleValue": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "placeholdersTapToInsert": "اضغط للإدراج",
+  "placeholdersTip": "لا يهم حجم الأحرف، وكل متغير يعمل بالعربية أو الإنجليزية — {arabic} و{english} متطابقان. أي شيء غير موجود في القائمة يُرسل كما كُتب.",
+  "@placeholdersTip": {
+    "placeholders": {
+      "english": { "type": "String" },
+      "arabic": { "type": "String" }
+    }
+  },
+  "placeholderPatient": "اسم المريض الكامل",
+  "placeholderFirstName": "الاسم الأول للمريض",
+  "placeholderPhone": "رقم هاتف المريض",
+  "placeholderClinic": "اسم عيادتك",
+  "placeholderToday": "تاريخ اليوم",
+  "placeholderLastVisit": "تاريخ آخر زيارة",
+  "placeholderLastTreatment": "العلاج المُنجز في آخر زيارة",
+  "placeholderLastPaid": "المبلغ المدفوع في آخر زيارة",
+  "placeholderLastOwed": "المبلغ المستحق من آخر زيارة",
+  "placeholderCredit": "رصيد المريض الحالي",
+
   "settingsTitle": "الإعدادات",
   "appearance": "المظهر",
   "appearanceLight": "فاتح",

@@ -26,5 +26,5 @@ jobs:
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: dental_clinic-windows-x64
+          name: dental_hatamleh-windows-x64
           path: build/windows/x64/runner/Release/

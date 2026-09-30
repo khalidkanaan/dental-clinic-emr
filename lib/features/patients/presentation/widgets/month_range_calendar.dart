@@ -200,7 +200,7 @@ class MonthRangeCalendar extends StatelessWidget {
                       final isEnd = DateUtils.isSameDay(day, end);
                       // hasBand guarantees both ends are set.
                       final between =
-                          hasBand && day.isAfter(start!) && day.isBefore(end!);
+                          hasBand && day.isAfter(start) && day.isBefore(end);
                       return _DayCell(
                         day: day,
                         label: loc.formatDecimal(dayNumber),

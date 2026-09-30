@@ -97,7 +97,7 @@ class PatientListTile extends ConsumerWidget {
   }
 }
 
-/// Compact "Last visit / <date>" block at the trailing edge of a patient row.
+/// Compact "Last visit / `<date>`" block at the trailing edge of a patient row.
 class _LastVisit extends StatelessWidget {
   const _LastVisit({required this.date});
 

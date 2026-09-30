@@ -11,12 +11,31 @@ import 'package:dental_clinic/features/patients/application/patient_search_contr
 import 'package:dental_clinic/features/patients/data/patient.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
-/// Opens the credit sheet for [patientId]. Resolves to `true` when the credit
-/// was changed and saved.
+/// Screens at least this wide get a centered dialog instead of a bottom sheet.
+const double _dialogBreakpoint = 600;
+
+/// Opens the patient credit panel for [patientId]: a bottom sheet on phones and
+/// a centered dialog on wider screens (desktop, tablets). Resolves to `true`
+/// when the credit was changed and saved.
 Future<bool> showPatientCreditSheet(
   BuildContext context, {
   required String patientId,
 }) async {
+  if (MediaQuery.sizeOf(context).width >= _dialogBreakpoint) {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        insetPadding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: PatientCreditSheet(patientId: patientId, asDialog: true),
+        ),
+      ),
+    );
+    return saved ?? false;
+  }
+
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -60,9 +79,18 @@ String _formatTimestamp(DateTime? at, String locale) {
 }
 
 class PatientCreditSheet extends ConsumerStatefulWidget {
-  const PatientCreditSheet({super.key, required this.patientId});
+  const PatientCreditSheet({
+    super.key,
+    required this.patientId,
+    this.asDialog = false,
+  });
 
   final String patientId;
+
+  /// True when shown in a centered dialog (wide screens) rather than a bottom
+  /// sheet. The dialog handles the keyboard itself and gets a close button
+  /// instead of a drag handle.
+  final bool asDialog;
 
   @override
   ConsumerState<PatientCreditSheet> createState() => _PatientCreditSheetState();
@@ -183,19 +211,29 @@ class _PatientCreditSheetState extends ConsumerState<PatientCreditSheet> {
     final delta = entered == null ? 0 : entered - patient.credit;
     final canSave = !_saving && entered != null && delta != 0;
 
+    final asDialog = widget.asDialog;
+
     return Padding(
-      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+      // A Dialog already moves itself above the keyboard; a sheet does not.
+      padding: EdgeInsets.only(bottom: asDialog ? 0 : media.viewInsets.bottom),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: (media.size.height - media.viewInsets.bottom) * 0.9,
+          maxHeight: (media.size.height - media.viewInsets.bottom) *
+              (asDialog ? 0.85 : 0.9),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          padding: EdgeInsets.fromLTRB(asDialog ? 24 : 20, asDialog ? 24 : 0,
+              asDialog ? 24 : 20, asDialog ? 24 : 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _SheetHeader(patient: patient),
+              _SheetHeader(
+                patient: patient,
+                onClose: asDialog
+                    ? () => Navigator.of(context).maybePop()
+                    : null,
+              ),
               const SizedBox(height: 16),
               _BalanceCard(patient: patient, locale: locale),
               const SizedBox(height: 20),
@@ -307,9 +345,12 @@ class _PatientCreditSheetState extends ConsumerState<PatientCreditSheet> {
 }
 
 class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({required this.patient});
+  const _SheetHeader({required this.patient, this.onClose});
 
   final Patient patient;
+
+  /// Shows a close button when set (dialog mode).
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -351,6 +392,14 @@ class _SheetHeader extends StatelessWidget {
             ],
           ),
         ),
+        if (onClose != null) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: l10n.actionClose,
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ],
       ],
     );
   }

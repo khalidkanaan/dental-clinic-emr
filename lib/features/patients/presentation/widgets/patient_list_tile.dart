@@ -7,6 +7,10 @@ import 'package:dental_clinic/features/patients/data/patient.dart';
 import 'package:dental_clinic/features/settings/application/settings_controllers.dart';
 import 'package:dental_clinic/l10n/app_localizations.dart';
 
+/// Narrower than this (phones), the last visit date goes under the phone
+/// number; wider (desktop, tablets), it sits at the far side of the row.
+const double _trailingLastVisitBreakpoint = 600;
+
 class PatientListTile extends ConsumerWidget {
   const PatientListTile({super.key, required this.patient, required this.onTap});
 
@@ -18,7 +22,13 @@ class PatientListTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
-    final lastVisit = ref.watch(showLastVisitInListProvider) ? patient.lastVisitDate : null;
+    final lastVisit =
+        ref.watch(showLastVisitInListProvider) ? patient.lastVisitDate : null;
+    final lastVisitText = lastVisit == null
+        ? null
+        : VisitDate.formatForDisplay(lastVisit, locale: locale);
+    final compact =
+        MediaQuery.sizeOf(context).width < _trailingLastVisitBreakpoint;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -70,16 +80,25 @@ class PatientListTile extends ConsumerWidget {
                         ),
                         textDirection: TextDirection.ltr,
                       ),
+                      if (compact && lastVisitText != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          l10n.lastVisitLabel(lastVisitText),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 // On the opposite side from the name: the right in English,
                 // the left in Arabic (the Row mirrors for right-to-left).
-                if (lastVisit != null) ...[
+                if (!compact && lastVisitText != null) ...[
                   const SizedBox(width: 12),
-                  _LastVisit(
-                    date: VisitDate.formatForDisplay(lastVisit, locale: locale),
-                  ),
+                  _LastVisit(date: lastVisitText),
                 ],
                 const SizedBox(width: 4),
                 Icon(
@@ -97,7 +116,7 @@ class PatientListTile extends ConsumerWidget {
   }
 }
 
-/// Compact "Last visit / `<date>`" block at the trailing edge of a patient row.
+/// Compact "Last visit / '<date>'" block at the trailing edge of a patient row.
 class _LastVisit extends StatelessWidget {
   const _LastVisit({required this.date});
 
